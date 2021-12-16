@@ -1,0 +1,5 @@
+crowdsec-openresty-bouncer (0.1.0) UNRELEASED; urgency=medium
+
+  * debian package
+  
+ -- Crowdsec Team <info@crowdsec.net>  Thu, 16 Dec 2021 15:00:06 +0100
