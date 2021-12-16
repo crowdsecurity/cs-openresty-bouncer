@@ -1,0 +1,6 @@
+debian/*.substvars
+debhelper-build-stamp
+debian/crowdsec-openresty-bouncer
+debian/.debhelper
+debian/changelog
+

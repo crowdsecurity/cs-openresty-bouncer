@@ -1,0 +1,9 @@
+Source: crowdsec-openresty-bouncer
+Maintainer: Crowdsec Team <debian@crowdsec.net>
+Build-Depends: debhelper, bash
+
+Package: crowdsec-openresty-bouncer
+Provides: crowdsec-openresty-bouncer
+Description: lua-based openresty bouncer for Crowdsec
+Architecture: any
+Depends: bash, openresty, openresty-opm, gettext-base

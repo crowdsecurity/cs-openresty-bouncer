@@ -1,0 +1,23 @@
+#!/bin/bash
+remove_lua_dependency() {
+    DEPENDENCY=(
+        "pintsized/lua-resty-http"
+    )
+    for dep in ${DEPENDENCY[@]};
+    do
+        opm list | grep ${dep} > /dev/null
+        if [[ $? == 0 ]]; then
+            echo "${dep} found, do you want to remove it (Y/n)? "
+            read answer
+            if [[ ${answer} == "" ]]; then
+                answer="y"
+            fi
+            if [ "$answer" != "${answer#[Yy]}" ] ;then
+                opm remove ${dep} > /dev/null && echo "${dep} successfully removed"
+            fi      
+        fi
+    done
+}
+
+remove_lua_dependency
+echo "Restart openresty to disable the crowdsec bouncer : sudo systemctl restart openresty"

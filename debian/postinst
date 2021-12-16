@@ -1,0 +1,63 @@
+#!/bin/bash
+systemctl daemon-reload
+
+
+START=0
+
+
+check_lua_dependency() {
+    DEPENDENCY=(
+        "pintsized/lua-resty-http"
+    )
+    for dep in ${DEPENDENCY[@]};
+    do
+        opm list | grep ${dep} > /dev/null
+        if [[ $? != 0 ]]; then
+            echo "${dep} not found, do you want to install it (Y/n)? "
+            read answer
+            if [[ ${answer} == "" ]]; then
+                answer="y"
+            fi
+            if [ "$answer" != "${answer#[Yy]}" ] ;then
+                opm get ${dep} > /dev/null && echo "${dep} successfully installed"
+            else
+                echo "unable to continue without ${dep}. Exiting" && exit 1
+            fi      
+        fi
+    done
+}
+
+if [ "$1" = "configure" ] && [ "$2" = "" ]; then
+
+    type cscli
+
+    if [ "$?" -eq "0" ] ; then
+        START=1
+        echo "cscli/crowdsec is present, generating API key"
+        unique=`date +%s`
+        API_KEY=`cscli -oraw bouncers add crowdsec-openresty-bouncer-${unique}`
+        CROWDSEC_LAPI_URL="http://127.0.0.1:8080"
+        if [ $? -eq 1 ] ; then
+            echo "failed to create API token, service won't be started."
+            START=0
+            API_KEY="<API_KEY>"
+        else
+            echo "API Key : ${API_KEY}"
+        fi
+
+        TMP=`mktemp -p /tmp/`
+        cp /etc/crowdsec/bouncers/crowdsec-openresty-bouncer.conf ${TMP}
+        API_KEY=${API_KEY} CROWDSEC_LAPI_URL=${CROWDSEC_LAPI_URL} envsubst < ${TMP} > /etc/crowdsec/bouncers/crowdsec-openresty-bouncer.conf
+        rm ${TMP}
+        check_lua_dependency
+    fi
+else
+    START=1
+fi
+
+
+if [ ${START} -eq 0 ] ; then
+    echo "no api key was generated"
+fi
+
+echo "Restart openresty to enable the crowdsec bouncer : sudo systemctl restart openresty"
