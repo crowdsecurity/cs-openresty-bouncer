@@ -3,6 +3,8 @@ package.path = package.path .. ";./?.lua"
 local config = require "config"
 local lrucache = require "resty.lrucache"
 local http = require "resty.http"
+local cjson = require "cjson"
+cjson.decode_array_with_array_mt(true)
 
 
 -- contain runtime = {}
@@ -77,9 +79,14 @@ function csmod.allowIp(ip)
     runtime.cache:set(ip, true,runtime.conf["CACHE_EXPIRATION"])
     return true, nil
   end
-  -- set ip in cache and block it
-  runtime.cache:set(ip, false,runtime.conf["CACHE_EXPIRATION"])
-  return false, nil
+  local decision = cjson.decode(body)[1]
+  if runtime.conf["BOUNCING_ON_TYPE"] == decision.type or runtime.conf["BOUNCING_ON_TYPE"] == "all" then
+    -- set ip in cache and block it
+    runtime.cache:set(ip, false,runtime.conf["CACHE_EXPIRATION"])
+    return false, nil
+  else
+    return true, nil
+  end
 end
 
 

@@ -35,10 +35,12 @@ function config.loadConfig(file)
         return nil, "File ".. file .." doesn't exist"
     end
     local conf = {}
-    local valid_params = {'API_URL', 'API_KEY'}
+    local valid_params = {'API_URL', 'API_KEY', 'BOUNCING_ON_TYPE'}
     local valid_int_params = {'CACHE_EXPIRATION', 'CACHE_SIZE', 'REQUEST_TIMEOUT'}
+    local valid_bouncing_on_type_values = {'ban', 'captcha', 'all'}
     local default_values = {
-        ['REQUEST_TIMEOUT'] = 0.2
+        ['REQUEST_TIMEOUT'] = 0.2,
+        ['BOUNCING_ON_TYPE'] = "ban"
     }
     for line in io.lines(file) do
         local isOk = false
@@ -49,6 +51,13 @@ function config.loadConfig(file)
             local s = split(line, "=")
             for k, v in pairs(s) do
                 if has_value(valid_params, v) then
+                    if v == "BOUNCING_ON_TYPE" then
+                        local value = s[2]
+                        if not has_value(valid_bouncing_on_type_values, s[2]) then
+                            ngx.log(ngx.ERR, "unsupported value '" .. s[2] .. "' for variable '" .. v .. "'. Using default value 'ban' instead")
+                            break
+                        end
+                    end
                     local n = next(s, k)
                     conf[v] = s[n]
                     break
