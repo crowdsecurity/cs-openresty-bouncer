@@ -36,6 +36,26 @@ docker run -d -p 8080:80 \
     --name openresty crowdsecurity/crowdsec-openresty
 ```
 
+Or you can even mount you own bouncer config file to the target path `/etc/crowdsec/bouncers/crowdsec-openresty-bouncer.conf`
+
+```shell
+$ cat myConfigFile.conf
+API_URL=http://172.17.0.1:8080
+API_KEY=abcdefghijklmnopqrstuvwxyz
+CACHE_EXPIRATION=1
+CACHE_SIZE=1000
+BOUNCING_ON_TYPE=ban
+REQUEST_TIMEOUT=0.2
+```
+
+Now run the openresty by mounting your own config file.
+
+```shell
+docker run -d -p 8080:80 \
+    -v ~/myConfigFile.conf:/etc/crowdsec/bouncers/crowdsec-openresty-bouncer.conf \
+    --name openresty crowdsecurity/crowdsec-openresty
+```
+
 ### Environment Variables
 
 * `API_URL`          - Crowdsec local API URL : `-e API_URL="http://172.17.0.1:8080"`
