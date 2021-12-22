@@ -1,0 +1,8 @@
+FROM busybox:latest
+
+COPY ./lua /crowdsec
+COPY ./ingress-nginx /crowdsec
+COPY ./config/template.conf /crowdsec/crowdsec-bouncer.conf
+COPY ./docker/docker_start.sh /
+
+ENTRYPOINT /bin/bash docker_start.sh

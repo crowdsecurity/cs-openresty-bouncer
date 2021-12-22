@@ -1,6 +1,9 @@
 #!/bin/bash
 CROWDSEC_BOUNCER_CONFIG="/etc/crowdsec/bouncers/crowdsec-openresty-bouncer.conf"
 
+if [ "$BOUNCER_CONFIG" != "" ]; then
+    CROWDSEC_BOUNCER_CONFIG="$BOUNCER_CONFIG"
+fi
 if [ "$API_URL" != "" ]; then
     sed -i "s,API_URL.*,API_URL=$API_URL," $CROWDSEC_BOUNCER_CONFIG
 fi
@@ -20,4 +23,6 @@ if [ "$REQUEST_TIMEOUT" != "" ]; then
     sed -i "s/REQUEST_TIMEOUT.*/REQUEST_TIMEOUT=$REQUEST_TIMEOUT/" $CROWDSEC_BOUNCER_CONFIG
 fi
 
-exec /usr/local/openresty/bin/openresty -g "daemon off;"
+if [ "${DISABLE_RUN,,}" != "true" ]; then
+    exec /usr/local/openresty/bin/openresty -g "daemon off;"
+fi
