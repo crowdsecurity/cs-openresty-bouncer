@@ -42,7 +42,7 @@ end
 
 function csmod.allowIp(ip)
   if runtime.conf == nil then
-    return nil, "Configuration is bad, cannot run properly"
+    return true, "Configuration is bad, cannot run properly"
   end
   local data = runtime.cache:get(ip)
 
@@ -64,15 +64,13 @@ function csmod.allowIp(ip)
     },
   })
   if not res then
-    ngx.log(ngx.ERR, "[Crowdsec] request failed: ", err)
-    return false, nil
+    return true, "request failed: ".. err
   end
 
   local status = res.status
   local body = res.body
-  if status~=200 then 
-    ngx.log(ngx.ERR, "[Crowdsec] Http error " .. status .. " while talking to LAPI (" .. link .. ")") -- API error, don't block IP
-    return true, nil 
+  if status~=200 then
+    return true, "Http error " .. status .. " while talking to LAPI (" .. link .. ")" 
   end
   if body == "null" then -- no result from API, no decision for this IP
     -- set ip in cache and DON'T block it
