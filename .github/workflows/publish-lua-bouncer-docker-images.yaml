@@ -16,7 +16,7 @@ jobs:
         name: Prepare
         id: prep
         run: |
-          DOCKER_IMAGE=crowdsecurity/openresty
+          DOCKER_IMAGE=crowdsecurity/lua-bouncer-plugin
           VERSION=edge
           if [[ $GITHUB_REF == refs/tags/* ]]; then
             VERSION=${GITHUB_REF#refs/tags/}
