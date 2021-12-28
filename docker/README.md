@@ -71,7 +71,7 @@ docker run -d -p 8080:80 \
 
 #### Useful File Locations
 
-* `/usr/local/openresty/lualib/crowdsec` - Crowdsec lua library path
+* `/usr/local/openresty/lualib/plugins/crowdsec` - Crowdsec lua library path
   
 * `/etc/nginx/conf.d` - Nginx configuration to load the crowdsec bouncer lua library and configuration.
 

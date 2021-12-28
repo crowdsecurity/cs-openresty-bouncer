@@ -2,7 +2,7 @@
 
 NGINX_CONF="crowdsec_openresty.conf"
 NGINX_CONF_DIR="/usr/local/openresty/nginx/conf/conf.d/"
-LIB_PATH="/usr/local/openresty/lualib/crowdsec/"
+LIB_PATH="/usr/local/openresty/lualib/plugins/crowdsec/"
 CONFIG_PATH="/etc/crowdsec/bouncers/"
 
 requirement() {
