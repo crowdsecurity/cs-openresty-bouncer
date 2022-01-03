@@ -19,5 +19,7 @@ remove_lua_dependency() {
     done
 }
 
-remove_lua_dependency
-echo "Restart openresty to disable the crowdsec bouncer : sudo systemctl restart openresty"
+if [ "$1" = "remove" ]; then
+    remove_lua_dependency
+    echo "Restart openresty to disable the crowdsec bouncer : sudo systemctl restart openresty"
+fi
