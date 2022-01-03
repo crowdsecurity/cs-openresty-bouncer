@@ -3,6 +3,7 @@ systemctl daemon-reload
 
 
 START=0
+BOUNCER_CONFIG_PATH="/etc/crowdsec/bouncers/crowdsec-openresty-bouncer.conf"
 
 
 check_lua_dependency() {
@@ -27,28 +28,37 @@ check_lua_dependency() {
     done
 }
 
-if [ "$1" = "configure" ] && [ "$2" = "" ]; then
+if [ "$1" = "configure" ]; then
 
     type cscli
 
     if [ "$?" -eq "0" ] ; then
-        START=1
-        echo "cscli/crowdsec is present, generating API key"
-        unique=`date +%s`
-        API_KEY=`cscli -oraw bouncers add crowdsec-openresty-bouncer-${unique}`
-        CROWDSEC_LAPI_URL="http://127.0.0.1:8080"
-        if [ $? -eq 1 ] ; then
-            echo "failed to create API token, service won't be started."
-            START=0
-            API_KEY="<API_KEY>"
-        else
-            echo "API Key : ${API_KEY}"
+        # Check if it's an upgrade
+        if [ "$2" != "" ] ; then
+            echo "Upgrading, check if there is bouncer configuration"
+            if [ -f "${BOUNCER_CONFIG_PATH}" ] ; then
+                START=2
+            fi
         fi
+        if [ ${START} -eq 0 ] ; then
+            START=1
+            echo "cscli/crowdsec is present, generating API key"
+            unique=`date +%s`
+            API_KEY=`cscli -oraw bouncers add crowdsec-openresty-bouncer-${unique}`
+            CROWDSEC_LAPI_URL="http://127.0.0.1:8080"
+            if [ $? -eq 1 ] ; then
+                echo "failed to create API token, service won't be started."
+                START=0
+                API_KEY="<API_KEY>"
+            else
+                echo "API Key : ${API_KEY}"
+            fi
 
-        TMP=`mktemp -p /tmp/`
-        cp /etc/crowdsec/bouncers/crowdsec-openresty-bouncer.conf ${TMP}
-        API_KEY=${API_KEY} CROWDSEC_LAPI_URL=${CROWDSEC_LAPI_URL} envsubst < ${TMP} > /etc/crowdsec/bouncers/crowdsec-openresty-bouncer.conf
-        rm ${TMP}
+            TMP=`mktemp -p /tmp/`
+            cp ${BOUNCER_CONFIG_PATH} ${TMP}
+            API_KEY=${API_KEY} CROWDSEC_LAPI_URL=${CROWDSEC_LAPI_URL} envsubst < ${TMP} > ${BOUNCER_CONFIG_PATH}
+            rm ${TMP}
+        fi
         check_lua_dependency
     fi
 else
