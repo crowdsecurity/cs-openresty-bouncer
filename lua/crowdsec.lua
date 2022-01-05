@@ -1,7 +1,6 @@
 package.path = package.path .. ";./?.lua"
 
 local config = require "plugins.crowdsec.config"
-local lrucache = require "resty.lrucache"
 local http = require "resty.http"
 local cjson = require "cjson"
 cjson.decode_array_with_array_mt(true)
@@ -31,28 +30,18 @@ function csmod.init(configFile, userAgent)
   end
   runtime.conf = conf
   runtime.userAgent = userAgent
-  local c, err = lrucache.new(conf["CACHE_SIZE"])
-  if not c then
-    error("failed to create the cache: " .. (err or "unknown"))
+  runtime.cache = ngx.shared.crowdsec
+
+  -- if stream mode, add callback to stream_query and start timer
+  if runtime.conf["MODE"] == "stream" then
+    runtime.cache:set("startup", true)
+    runtime.cache:set("first_run", true)
   end
-  runtime.cache = c
+
   return true, nil
 end
 
-
-function csmod.allowIp(ip)
-  if runtime.conf == nil then
-    return true, "Configuration is bad, cannot run properly"
-  end
-  local data = runtime.cache:get(ip)
-
-  if data ~= nil then -- we have it in cache
-    ngx.log(ngx.DEBUG, "'" .. ip .. "' is in cache")
-    return data, nil
-  end
-
-  -- not in cache
-  local link = runtime.conf["API_URL"] .. "/v1/decisions?ip=" .. ip
+function http_request(link)
   local httpc = http.new()
   httpc:set_timeout(runtime.conf['REQUEST_TIMEOUT'])
   local res, err = httpc:request_uri(link, {
@@ -63,6 +52,85 @@ function csmod.allowIp(ip)
       ['User-Agent'] = runtime.userAgent
     },
   })
+  return res, err
+end
+
+function parse_duration(duration)
+  local match, err = ngx.re.match(duration, "((?<hours>[0-9]+)h)?((?<minutes>[0-9]+)m)?(?<seconds>[0-9]+)")
+  local ttl = 0
+  if not match then
+    if err then
+      return ttl, err
+    end
+  end
+  if match["hours"] ~= nil then
+    local hours = tonumber(match["hours"])
+    ttl = ttl + (hours * 3600)
+  end
+  if match["minutes"] ~= nil then
+    local minutes = tonumber(match["minutes"])
+    ttl = ttl + (minutes * 60)
+  end
+  if match["seconds"] ~= nil then
+    local seconds = tonumber(match["seconds"])
+    ttl = ttl + seconds
+  end
+  return ttl, nil
+end
+
+function stream_query()
+  -- As this function is running inside coroutine (with ngx.timer.every), 
+  -- we need to raise error instead of returning them
+  ngx.log(ngx.DEBUG, "Stream Query from worker : " .. tostring(ngx.worker.id()) .. " with startup "..tostring(runtime.cache:get("startup")))
+  local link = runtime.conf["API_URL"] .. "/v1/decisions/stream?startup=" .. tostring(runtime.cache:get("startup"))
+  local res, err = http_request(link)
+  if not res then
+    error("request failed: ".. err)
+  end
+
+  local status = res.status
+  local body = res.body
+  if status~=200 then
+    error("Http error " .. status .. " with message (" .. tostring(body) .. ")")
+  end
+
+  local decisions = cjson.decode(body)
+  -- process deleted decisions
+  if type(decisions.deleted) == "table" then
+    for i, decision in pairs(decisions.deleted) do
+      runtime.cache:delete(decision.value)
+      ngx.log(ngx.DEBUG, "Deleting '" .. decision.value .. "'")
+    end
+  end
+
+  -- process new decisions
+  if type(decisions.new) == "table" then
+    for i, decision in pairs(decisions.new) do
+      if runtime.conf["BOUNCING_ON_TYPE"] == decision.type or runtime.conf["BOUNCING_ON_TYPE"] == "all" then
+        local ttl, err = parse_duration(decision.duration)
+        if err ~= nil then
+          ngx.log(ngx.ERR, "[Crowdsec] failed to parse ban duration '" .. decision.duration .. "' : " .. err)
+        end
+        local succ, err, forcible = runtime.cache:set(decision.value, false, ttl)
+        if not succ then
+          ngx.log(ngx.ERR, "failed to add ".. decision.value .." : "..err)
+        end
+        if forcible then
+          ngx.log(ngx.ERR, "Lua shared dict (crowdsec cache) is full, please increase dict size in config")
+        end
+        ngx.log(ngx.DEBUG, "Adding '" .. decision.value .. "' in cache for '" .. ttl .. "' seconds")
+      end
+    end
+  end
+
+  -- not startup anymore after first callback
+  runtime.cache:set("startup", false)
+  return nil
+end
+
+function live_query(ip)
+  local link = runtime.conf["API_URL"] .. "/v1/decisions?ip=" .. ip
+  local res, err = http_request(link)
   if not res then
     return true, "request failed: ".. err
   end
@@ -86,6 +154,37 @@ function csmod.allowIp(ip)
   else
     return true, nil
   end
+end
+
+
+function csmod.allowIp(ip)
+  if runtime.conf == nil then
+    return true, "Configuration is bad, cannot run properly"
+  end
+
+  -- if it stream mode and startup start timer
+  if runtime.cache:get("first_run") == true then 
+    local ok, err = ngx.timer.every(runtime.conf["UPDATE_FREQUENCY"], stream_query)
+    if not ok then
+      runtime.cache:set("first_run", true)
+      return true, "Failed to create the timer: " .. (err or "unknown")
+    end
+    runtime.cache:set("first_run", false)
+    ngx.log(ngx.DEBUG, "Timer launched")
+  end
+
+  local data = runtime.cache:get(ip)
+  if data ~= nil then -- we have it in cache
+    ngx.log(ngx.DEBUG, "'" .. ip .. "' is in cache")
+    return data, nil
+  end
+
+  -- if live mode, query lapi
+  if runtime.conf["MODE"] == "live" then
+    local ok, err = live_query(ip)
+    return ok, err
+  end
+  return true, nil
 end
 
 

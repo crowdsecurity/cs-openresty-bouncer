@@ -22,7 +22,13 @@ fi
 if [ "$REQUEST_TIMEOUT" != "" ]; then
     sed -i "s/REQUEST_TIMEOUT.*/REQUEST_TIMEOUT=$REQUEST_TIMEOUT/" $CROWDSEC_BOUNCER_CONFIG
 fi
+if [ "$UPDATE_FREQUENCY" != "" ]; then
+    sed -i "s/UPDATE_FREQUENCY.*/UPDATE_FREQUENCY=$UPDATE_FREQUENCY/" $CROWDSEC_BOUNCER_CONFIG
+fi
+if [ "$MODE" != "" ]; then
+    sed -i "s/MODE.*/MODE=$MODE/" $CROWDSEC_BOUNCER_CONFIG
+fi
 
-if [ "${DISABLE_RUN,,}" != "true" ]; then
+if [ "${IS_LUALIB_IMAGE,,}" != "true" ]; then
     exec /usr/local/openresty/bin/openresty -g "daemon off;"
 fi
