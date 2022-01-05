@@ -5,4 +5,5 @@ COPY ./ingress-nginx /crowdsec
 COPY ./config/template.conf /crowdsec/crowdsec-bouncer.conf
 COPY ./docker/docker_start.sh /
 
+ENV IS_LUALIB_IMAGE=true
 ENTRYPOINT /bin/bash docker_start.sh

@@ -36,23 +36,17 @@ function csmod.init(configFile, userAgent)
     error("failed to create the cache: " .. (err or "unknown"))
   end
   runtime.cache = c
+
+  -- if stream mode, add callback to stream_query and start timer
+  if runtime.conf["MODE"] == "stream" then
+    runtime.startup = true
+    runtime.first_run = true
+  end
+
   return true, nil
 end
 
-
-function csmod.allowIp(ip)
-  if runtime.conf == nil then
-    return true, "Configuration is bad, cannot run properly"
-  end
-  local data = runtime.cache:get(ip)
-
-  if data ~= nil then -- we have it in cache
-    ngx.log(ngx.DEBUG, "'" .. ip .. "' is in cache")
-    return data, nil
-  end
-
-  -- not in cache
-  local link = runtime.conf["API_URL"] .. "/v1/decisions?ip=" .. ip
+function http_request(link)
   local httpc = http.new()
   httpc:set_timeout(runtime.conf['REQUEST_TIMEOUT'])
   local res, err = httpc:request_uri(link, {
@@ -63,6 +57,80 @@ function csmod.allowIp(ip)
       ['User-Agent'] = runtime.userAgent
     },
   })
+  return res, err
+end
+
+function parse_duration(duration)
+  local match, err = ngx.re.match(duration, "((?<hours>[0-9]+)h)?((?<minutes>[0-9]+)m)?(?<seconds>[0-9]+)")
+  local ttl = 0
+  if not match then
+    if err then
+      return ttl, err
+    end
+  end
+  if match["hours"] ~= nil then
+    ngx.log(ngx.ERR, "HOURS : " .. match["hours"])
+    local hours = tonumber(match["hours"])
+    ttl = ttl + (hours * 3600)
+  end
+  if match["minutes"] ~= nil then
+    ngx.log(ngx.ERR, "MINUTES : " .. match["minutes"])
+    local minutes = tonumber(match["minutes"])
+    ttl = ttl + (minutes * 60)
+  end
+  if match["seconds"] ~= nil then
+    ngx.log(ngx.ERR, "SECONDS : " .. match["seconds"])
+    local seconds = tonumber(match["seconds"])
+    ttl = ttl + seconds
+  end
+  return ttl, nil
+end
+
+function stream_query()
+  ngx.log(ngx.ERR, "Stream Query from worker : " .. tostring(ngx.worker.id()))
+  local link = runtime.conf["API_URL"] .. "/v1/decisions/stream?startup=" .. tostring(runtime.startup)
+  local res, err = http_request(link)
+  if not res then
+    return "request failed: ".. err
+  end
+
+  local status = res.status
+  local body = res.body
+  if status~=200 then
+    return "Http error " .. status .. " while talking to LAPI (" .. link .. ")" 
+  end
+
+  local decisions = cjson.decode(body)
+  -- process deleted decisions
+  if type(decisions.deleted) == "table" then
+    for i, decision in pairs(decisions.deleted) do
+      runtime.cache:delete(decision.value)
+      ngx.log(ngx.ERR, "DELETING '" .. decision.value .. "'")
+    end
+  end
+
+  -- process new decisions
+  if type(decisions.new) == "table" then
+    for i, decision in pairs(decisions.new) do
+      if runtime.conf["BOUNCING_ON_TYPE"] == decision.type or runtime.conf["BOUNCING_ON_TYPE"] == "all" then
+        local ttl, err = parse_duration(decision.duration)
+        if err ~= nil then
+          ngx.log(ngx.ERR, "[Crowdsec] failed to parse ban duration '" .. decision.duration .. "' : " .. err)
+        end
+        runtime.cache:set(decision.value, false, ttl)
+        ngx.log(ngx.ERR, "Adding '" .. decision.value .. "' in cache for '" .. ttl .. "' seconds")
+      end
+    end
+  end
+
+  -- not startup anymore after first callback
+  runtime.startup = false
+  return nil
+end
+
+function live_query(ip)
+  local link = runtime.conf["API_URL"] .. "/v1/decisions?ip=" .. ip
+  local res, err = http_request(link)
   if not res then
     return true, "request failed: ".. err
   end
@@ -86,6 +154,38 @@ function csmod.allowIp(ip)
   else
     return true, nil
   end
+end
+
+
+function csmod.allowIp(ip)
+  if runtime.conf == nil then
+    return true, "Configuration is bad, cannot run properly"
+  end
+
+  -- if it stream mode and startup start timer
+  ngx.log(ngx.ERR, "FIRST RUN : " .. tostring(runtime.first_run))
+  if runtime.first_run == true then 
+    local ok, err = ngx.timer.every(runtime.conf["UPDATE_FREQUENCY"], stream_query)
+    if not ok then
+      runtime.startup = true
+      return true, "Failed to create the timer: " .. (err or "unknown")
+    end
+    runtime.first_run = false
+    ngx.log(ngx.ERR, "FIRST RUN AGAIN : " .. tostring(runtime.first_run))
+  end
+
+  local data = runtime.cache:get(ip)
+  if data ~= nil then -- we have it in cache
+    ngx.log(ngx.DEBUG, "'" .. ip .. "' is in cache")
+    return data, nil
+  end
+
+  -- if live mode, query lapi
+  if runtime.conf["MODE"] == "live" then
+    ok, err = live_query(ip)
+    return ok, err
+  end
+  return true, nil
 end
 
 
