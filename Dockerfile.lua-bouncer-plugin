@@ -1,8 +1,11 @@
-FROM busybox:latest
+FROM alpine:latest
 
-COPY ./lua /crowdsec
+RUN apk add --no-cache git
+RUN git clone https://github.com/crowdsecurity/lua-cs-bouncer.git
+RUN mkdir -p /crowdsec
+RUN cp lua-cs-bouncer/nginx/*.lua /crowdsec
+RUN cp lua-cs-bouncer/nginx/template.conf /crowdsec/crowdsec-bouncer.conf
 COPY ./ingress-nginx /crowdsec
-COPY ./config/template.conf /crowdsec/crowdsec-bouncer.conf
 COPY ./docker/docker_start.sh /
 
 ENV IS_LUALIB_IMAGE=true

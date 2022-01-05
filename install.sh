@@ -15,6 +15,7 @@ gen_config_file() {
     SUFFIX=`tr -dc A-Za-z0-9 </dev/urandom | head -c 8`
     API_KEY=`cscli bouncers add crowdsec-openresty-bouncer-${SUFFIX} -o raw`
     API_KEY=${API_KEY} CROWDSEC_LAPI_URL="http://127.0.0.1:8080" envsubst < ./config/template.conf > "${CONFIG_PATH}crowdsec-openresty-bouncer.conf"
+    echo "New API key generated in config '${CONFIG_PATH}crowdsec-openresty-bouncer.conf'"
 }
 
 check_openresty_dependency() {
