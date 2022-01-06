@@ -56,14 +56,23 @@ docker run -d -p 8080:80 \
     --name openresty crowdsecurity/crowdsec-openresty
 ```
 
+### Configuration
+
+The bouncer uses [lua_shared_dict](https://github.com/openresty/lua-nginx-module#lua_shared_dict) to share cache between all workers.
+If you want to increase the cache size you need to change this value `lua_shared_dict crowdsec_cache 50m;` in the config file `/etc/nginx/conf.d/crowdsec_openresty.conf`.
+
+For others parameters, you can use environment variables below or mount your own config file at `/etc/crowdsec/bouncers/crowdsec-openresty-bouncer.conf`
+
 ### Environment Variables
 
 * `API_URL`          - Crowdsec local API URL : `-e API_URL="http://172.17.0.1:8080"`
 * `API_KEY`          - Disable local API (default: `false`) : `-e API_KEY="abcdefghijklmnopqrstuvwxyz"`
-* `CACHE_EXPIRATION` - Decisions cache time (in seconds) (default: `1`) : `-e CACHE_EXPIRATION="1"`
+* `CACHE_EXPIRATION` - [For 'live' mode only] decisions cache time (in seconds) (default: `1`) : `-e CACHE_EXPIRATION="1"`
 * `CACHE_SIZE`       - The maximum number of decisions in cache (default: `1000`) : `-e CACHE_SIZE="1000"`
 * `BOUNCING_ON_TYPE` - The decisions type the bouncer should remediate on (default: `ban`) : `-e BOUNCING_ON_TYPE="ban"`
 * `REQUEST_TIMEOUT`  - Request timeout (in seconds) for LAPI request (default: `0.2`) : `-e REQUEST_TIMEOUT="0.2"`
+* `UPDATE_FREQUENCY` - [For 'stream' mode only] pull frequency (in seconds) from LAPI (default: `10`) : `-e UPDATE_FREQUENCY="10"`
+* `MODE`             - Bouncer mode : streaming (`stream`) or rupture (`live`) mode (default: `stream`) : `-e MODE="stream"`
 
 ### Volumes
 
