@@ -1,4 +1,4 @@
-# CrowdSec OpenResty Bouncer
+# OpenResty with CrowdSec Bouncer
 
 CrowdSec OpenResty - an OpenResty with lua bouncer to use with Crowdsec.
 
