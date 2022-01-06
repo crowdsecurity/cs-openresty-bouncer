@@ -43,9 +43,10 @@ $ cat myConfigFile.conf
 API_URL=http://172.17.0.1:8080
 API_KEY=abcdefghijklmnopqrstuvwxyz
 CACHE_EXPIRATION=1
-CACHE_SIZE=1000
 BOUNCING_ON_TYPE=ban
 REQUEST_TIMEOUT=0.2
+UPDATE_FREQUENCY=10
+MODE=stream
 ```
 
 Now run the openresty by mounting your own config file.
