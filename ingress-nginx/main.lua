@@ -11,7 +11,7 @@ ngx.log(ngx.ALERT, "[Crowdsec] Initialisation done")
 
 function _M.rewrite()
     local remote_addr = ngx.var.remote_addr
-    local is_allowed, err = cs.allowIp(remote_addr)
+    local is_allowed, remediation, err = cs.allowIp(remote_addr)
     if err ~= nil then
         ngx.log(ngx.ERR, "[Crowdsec] bouncer error :" .. err)
     end

@@ -22,6 +22,8 @@ override_dh_auto_install:
 	cp lua-cs-bouncer/nginx/crowdsec.lua debian/crowdsec-openresty-bouncer/usr/local/openresty/lualib/plugins/crowdsec/
 	cp lua-cs-bouncer/nginx/access.lua debian/crowdsec-openresty-bouncer/usr/local/openresty/lualib/plugins/crowdsec/
 	cp lua-cs-bouncer/nginx/recaptcha.lua debian/crowdsec-openresty-bouncer/usr/local/openresty/lualib/plugins/crowdsec/
+	cp lua-cs-bouncer/nginx/iputils.lua debian/crowdsec-openresty-bouncer/usr/local/openresty/lualib/plugins/crowdsec/
+	cp lua-cs-bouncer/nginx/bitop.lua debian/crowdsec-openresty-bouncer/usr/local/openresty/lualib/plugins/crowdsec/
 	mkdir -p debian/crowdsec-openresty-bouncer/etc/crowdsec/bouncers/
 	cp lua-cs-bouncer/nginx/template.conf debian/crowdsec-openresty-bouncer/etc/crowdsec/bouncers/crowdsec-openresty-bouncer.conf
 override_dh_usrlocal:

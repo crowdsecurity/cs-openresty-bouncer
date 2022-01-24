@@ -1,7 +1,6 @@
 ARG BUILD_ENV=git
 FROM openresty/openresty:alpine-fat as with_deps
 RUN luarocks install lua-resty-http
-RUN luarocks install lua-resty-ipmatcher
 
 FROM with_deps as git
 ARG BUILD_ENV=git
