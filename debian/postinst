@@ -14,16 +14,7 @@ check_lua_dependency() {
     do
         opm list | grep ${dep} > /dev/null
         if [[ $? != 0 ]]; then
-            echo "${dep} not found, do you want to install it (Y/n)? "
-            read answer
-            if [[ ${answer} == "" ]]; then
-                answer="y"
-            fi
-            if [ "$answer" != "${answer#[Yy]}" ] ;then
-                opm get ${dep} > /dev/null && echo "${dep} successfully installed"
-            else
-                echo "unable to continue without ${dep}. Exiting" && exit 1
-            fi      
+            opm get ${dep} > /dev/null && echo "${dep} successfully installed"     
         fi
     done
 }
