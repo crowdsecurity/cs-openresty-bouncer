@@ -1,0 +1,2 @@
+crowdsec_nginx.conf.patch -p0
+package-version-patch-name.patch

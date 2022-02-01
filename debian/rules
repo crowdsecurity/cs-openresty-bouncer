@@ -16,12 +16,13 @@ override_dh_auto_build:
 override_dh_auto_install:
 	mkdir -p debian/crowdsec-openresty-bouncer/usr/local/openresty/nginx/conf/conf.d/
 	cp openresty/crowdsec_openresty.conf debian/crowdsec-openresty-bouncer/usr/local/openresty/nginx/conf/conf.d/
+
 	git clone https://github.com/crowdsecurity/lua-cs-bouncer.git
-	mkdir -p debian/crowdsec-openresty-bouncer/usr/local/openresty/lualib/plugins/crowdsec/
-	cp lua-cs-bouncer/nginx/config.lua debian/crowdsec-openresty-bouncer/usr/local/openresty/lualib/plugins/crowdsec/
-	cp lua-cs-bouncer/nginx/crowdsec.lua debian/crowdsec-openresty-bouncer/usr/local/openresty/lualib/plugins/crowdsec/
-	cp lua-cs-bouncer/nginx/access.lua debian/crowdsec-openresty-bouncer/usr/local/openresty/lualib/plugins/crowdsec/
-	cp lua-cs-bouncer/nginx/recaptcha.lua debian/crowdsec-openresty-bouncer/usr/local/openresty/lualib/plugins/crowdsec/
+
+	mkdir -p debian/crowdsec-openresty-bouncer/usr/local/openresty/lualib/
+	mkdir -p debian/crowdsec-openresty-bouncer/var/lib/crowdsec/lua/templates/
+	cp -r lua-cs-bouncer/lib/* debian/crowdsec-openresty-bouncer/usr/local/openresty/lualib/
+	cp -r lua-cs-bouncer/templates/* debian/crowdsec-openresty-bouncer/var/lib/crowdsec/lua/templates/
 	mkdir -p debian/crowdsec-openresty-bouncer/etc/crowdsec/bouncers/
-	cp lua-cs-bouncer/nginx/template.conf debian/crowdsec-openresty-bouncer/etc/crowdsec/bouncers/crowdsec-openresty-bouncer.conf
+	cp lua-cs-bouncer/config_example.conf debian/crowdsec-openresty-bouncer/etc/crowdsec/bouncers/crowdsec-openresty-bouncer.conf
 override_dh_usrlocal:
