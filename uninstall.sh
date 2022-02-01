@@ -3,6 +3,24 @@
 NGINX_CONF="crowdsec_openresty.conf"
 NGINX_CONF_DIR="/usr/local/openresty/nginx/conf/conf.d/"
 LIB_PATH="/usr/local/openresty/lualib/plugins/crowdsec/"
+PKG="apt"
+PACKAGE_LIST="dpkg -l"
+
+check_pkg_manager(){
+    if [ -f /etc/redhat-release ]; then
+        PKG="yum remove"
+        PACKAGE_LIST="yum list installed"
+    elif cat /etc/system-release | grep -q "Amazon Linux release 2 (Karoo)"; then
+        PKG="yum remove"
+        PACKAGE_LIST="yum list installed"
+    elif [ -f /etc/debian_version ]; then
+        PKG="apt remove --purge"
+        PACKAGE_LIST="dpkg -l"
+    else
+        echo "Distribution is not supported, exiting."
+        exit
+    fi   
+}
 
 remove_lua_dependency() {
     DEPENDENCY=(
@@ -30,7 +48,7 @@ remove_openresty_dependency() {
     )
     for dep in ${DEPENDENCY[@]};
     do
-        dpkg -l | grep ${dep} > /dev/null
+        $PACKAGE_LIST | grep ${dep} > /dev/null
         if [[ $? == 0 ]]; then
             echo "${dep} found, do you want to remove it (Y/n)? "
             read answer
@@ -38,7 +56,7 @@ remove_openresty_dependency() {
                 answer="y"
             fi
             if [ "$answer" != "${answer#[Yy]}" ] ;then
-                apt-get remove --purge -y -qq ${dep} > /dev/null && echo "${dep} successfully removed"
+                $PKG -y -qq ${dep} > /dev/null && echo "${dep} successfully removed"
             fi      
         fi
     done
@@ -54,6 +72,8 @@ if ! [ $(id -u) = 0 ]; then
     log_err "Please run the uninstall script as root or with sudo"
     exit 1
 fi
+
+check_pkg_manager
 remove_lua_dependency
 remove_openresty_dependency
 uninstall
