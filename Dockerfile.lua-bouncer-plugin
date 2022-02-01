@@ -9,9 +9,11 @@ FROM alpine:latest as local
 COPY ./lua-cs-bouncer/ lua-cs-bouncer
 
 FROM ${BUILD_ENV}
-RUN mkdir -p /crowdsec
-RUN cp lua-cs-bouncer/nginx/*.lua /crowdsec
-RUN cp lua-cs-bouncer/nginx/template.conf /crowdsec/crowdsec-bouncer.conf
+RUN mkdir -p /crowdsec/templates
+RUN cp lua-cs-bouncer/lib/plugins/crowdsec/*.lua /crowdsec
+RUN cp lua-cs-bouncer/lib/crowdsec.lua /crowdsec
+RUN cp lua-cs-bouncer/templates/* /crowdsec/templates
+RUN cp lua-cs-bouncer/config_example.conf /crowdsec/crowdsec-bouncer.conf
 COPY ./ingress-nginx /crowdsec
 COPY ./docker/docker_start.sh /
 

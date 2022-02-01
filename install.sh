@@ -2,11 +2,13 @@
 
 NGINX_CONF="crowdsec_openresty.conf"
 NGINX_CONF_DIR="/usr/local/openresty/nginx/conf/conf.d/"
-LIB_PATH="/usr/local/openresty/lualib/plugins/crowdsec/"
+LIB_PATH="/usr/local/openresty/lualib/"
 CONFIG_PATH="/etc/crowdsec/bouncers/"
+DATA_PATH="/var/lib/crowdsec/lua/"
 
 requirement() {
     mkdir -p "${CONFIG_PATH}"
+    mkdir -p "${DATA_PATH}"
     mkdir -p "${NGINX_CONF_DIR}"
     mkdir -p "${LIB_PATH}"
 }
@@ -64,7 +66,8 @@ check_lua_dependency() {
 
 
 install() {
-    cp lua/* ${LIB_PATH}
+    cp -r lua/lib/* ${LIB_PATH}
+    cp lua/templates/* ${DATA_PATH}templates/
 	cp openresty/${NGINX_CONF} ${NGINX_CONF_DIR}/${NGINX_CONF}
 }
 

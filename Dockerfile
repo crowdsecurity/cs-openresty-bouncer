@@ -11,9 +11,10 @@ FROM with_deps as local
 COPY ./lua-cs-bouncer/ lua-cs-bouncer
 
 FROM ${BUILD_ENV}
-RUN mkdir -p /usr/local/openresty/lualib/plugins/crowdsec/ /etc/crowdsec/bouncers/
-RUN cp lua-cs-bouncer/nginx/*.lua /usr/local/openresty/lualib/plugins/crowdsec/
-RUN cp lua-cs-bouncer/nginx/template.conf /etc/crowdsec/bouncers/crowdsec-openresty-bouncer.conf
+RUN mkdir -p /etc/crowdsec/bouncers/ /var/lib/crowdsec/lua/templates/
+RUN cp -R lua-cs-bouncer/lib/* /usr/local/openresty/lualib/
+RUN cp -R lua-cs-bouncer/templates/* /var/lib/crowdsec/lua/templates/
+RUN cp lua-cs-bouncer/config_example.conf /etc/crowdsec/bouncers/crowdsec-openresty-bouncer.conf
 RUN rm -rf ./lua-cs-bouncer/
 COPY ./openresty /etc/nginx/conf.d
 COPY ./docker/docker_start.sh /
