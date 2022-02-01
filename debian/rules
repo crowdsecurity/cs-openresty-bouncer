@@ -17,7 +17,7 @@ override_dh_auto_install:
 	mkdir -p debian/crowdsec-openresty-bouncer/usr/local/openresty/nginx/conf/conf.d/
 	cp openresty/crowdsec_openresty.conf debian/crowdsec-openresty-bouncer/usr/local/openresty/nginx/conf/conf.d/
 
-	git clone -b captcha_support https://github.com/crowdsecurity/lua-cs-bouncer.git
+	git clone https://github.com/crowdsecurity/lua-cs-bouncer.git
 
 	mkdir -p debian/crowdsec-openresty-bouncer/usr/local/openresty/lualib/
 	mkdir -p debian/crowdsec-openresty-bouncer/var/lib/crowdsec/lua/templates/
