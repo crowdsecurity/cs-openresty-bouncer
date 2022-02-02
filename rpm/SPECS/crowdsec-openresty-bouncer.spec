@@ -46,6 +46,7 @@ rm -rf %{buildroot}
 %files
 %defattr(-,root,root,-)
 /usr/local/openresty/lualib/
+/var/lib/crowdsec/lua/templates/
 /usr/local/openresty/nginx/conf/conf.d/crowdsec_openresty.conf
 %config(noreplace) /etc/crowdsec/bouncers/%{name}.conf
 
