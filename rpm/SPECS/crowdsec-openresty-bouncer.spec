@@ -55,8 +55,21 @@ rm -rf %{buildroot}
 
 systemctl daemon-reload
 
+NGINX_CONFIG_PATH="/usr/local/openresty/nginx/conf/conf.d/crowdsec_openresty.conf"
 BOUNCER_CONFIG_PATH="/etc/crowdsec/bouncers/crowdsec-openresty-bouncer.conf"
+CERT_FILE=""
+CERT_OK=0
 START=0
+
+CERTS=(
+    "/etc/pki/tls/certs/ca-bundle.crt"
+    "/etc/pki/tls/cacert.pem"
+    "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem"
+    "/etc/ssl/certs/ca-bundle.crt"
+    "/etc/ssl/certs/ca-certificates.crt"
+)
+
+
 
 check_lua_dependency() {
     DEPENDENCY=(
@@ -74,39 +87,46 @@ check_lua_dependency() {
 
 if [ "$1" == "1" ] ; then
     type cscli > /dev/null
-
     if [ "$?" -eq "0" ] ; then
-        # Check if it's an upgrade
-        if [ "$2" != "" ] ; then
-            echo "Upgrading, check if there is bouncer configuration"
-            if [ -f "${BOUNCER_CONFIG_PATH}" ] ; then
-                START=2
-            fi
+        START=1
+        echo "cscli/crowdsec is present, generating API key"
+        unique=`date +%s`
+        API_KEY=`cscli -oraw bouncers add crowdsec-openresty-bouncer-${unique}`
+        CROWDSEC_LAPI_URL="http://127.0.0.1:8080"
+        if [ $? -eq 1 ] ; then
+            echo "failed to create API token, service won't be started."
+            START=0
+            API_KEY="<API_KEY>"
+        else
+            echo "API Key : ${API_KEY}"
         fi
-        if [ ${START} -eq 0 ] ; then
-            START=1
-            echo "cscli/crowdsec is present, generating API key"
-            unique=`date +%s`
-            API_KEY=`cscli -oraw bouncers add crowdsec-openresty-bouncer-${unique}`
-            CROWDSEC_LAPI_URL="http://127.0.0.1:8080"
-            if [ $? -eq 1 ] ; then
-                echo "failed to create API token, service won't be started."
-                START=0
-                API_KEY="<API_KEY>"
-            else
-                echo "API Key : ${API_KEY}"
-            fi
-
-            TMP=`mktemp -p /tmp/`
-            cp ${BOUNCER_CONFIG_PATH} ${TMP}
-            API_KEY=${API_KEY} CROWDSEC_LAPI_URL=${CROWDSEC_LAPI_URL} envsubst < ${TMP} > ${BOUNCER_CONFIG_PATH}
-            rm ${TMP}
-        fi
+        TMP=`mktemp -p /tmp/`
+        cp ${BOUNCER_CONFIG_PATH} ${TMP}
+        API_KEY=${API_KEY} CROWDSEC_LAPI_URL=${CROWDSEC_LAPI_URL} envsubst < ${TMP} > ${BOUNCER_CONFIG_PATH}
+        rm ${TMP}
         check_lua_dependency
+
     fi
+
+    TMP=`mktemp -p /tmp/`
+    cp ${NGINX_CONFIG_PATH} ${TMP}
+    for cert_path in ${CERTS[@]};
+    do
+        if [ -f $cert_path ]; then
+            CERT_FILE=$cert_path
+            break
+        fi
+    done
+    SSL_CERTS_PATH=${CERT_FILE} envsubst < ${TMP} > ${NGINX_CONFIG_PATH}
+    rm ${TMP}
 else 
     START=1
 fi
+
+if [ "$CERT_FILE" = "" ]; then
+    echo "Unable to find a valid certificate, please provide a valide certificate instead of SSL_CERTS_PATH in ${NGINX_CONFIG_PATH}."
+fi
+
 
 echo "CrowdSec OpenResty Bouncer installed. Restart openresty service with 'sudo systemctl restart openresty'"
 
