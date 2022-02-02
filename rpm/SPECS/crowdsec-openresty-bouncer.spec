@@ -31,12 +31,13 @@ Requires: openresty, openresty-opm, gettext
 rm -rf %{buildroot}
 mkdir -p %{buildroot}/usr/sbin
 mkdir -p %{buildroot}/usr/local/openresty/nginx/conf/conf.d/
-mkdir -p %{buildroot}/usr/local/openresty/lualib/
+mkdir -p %{buildroot}/usr/local/openresty/lualib/plugins/crowdsec/
 mkdir -p %{buildroot}/var/lib/crowdsec/lua/templates/
 mkdir -p %{buildroot}/etc/crowdsec/bouncers/
 git clone https://github.com/crowdsecurity/lua-cs-bouncer.git
 install -m 600 -D lua-cs-bouncer/config_example.conf %{buildroot}/etc/crowdsec/bouncers/%{name}.conf
-install -m 644 -D lua-cs-bouncer/lib/* %{buildroot}/usr/local/openresty/lualib/
+install -m 644 -D lua-cs-bouncer/lib/crowdsec.lua %{buildroot}/usr/local/openresty/lualib/
+install -m 644 -D lua-cs-bouncer/lib/plugins/crowdsec/* %{buildroot}/usr/local/openresty/lualib/plugins/crowdsec/
 install -m 644 -D lua-cs-bouncer/templates/* %{buildroot}/var/lib/crowdsec/lua/templates/
 install -m 644 -D openresty/crowdsec_openresty.conf %{buildroot}/usr/local/openresty/nginx/conf/conf.d/
 
