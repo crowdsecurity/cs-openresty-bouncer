@@ -29,7 +29,6 @@ Requires: openresty, openresty-opm, gettext
 
 %install
 rm -rf %{buildroot}
-mkdir -p %{buildroot}/usr/sbin
 mkdir -p %{buildroot}/usr/local/openresty/nginx/conf/conf.d/
 mkdir -p %{buildroot}/usr/local/openresty/lualib/plugins/crowdsec/
 mkdir -p %{buildroot}/var/lib/crowdsec/lua/templates/
@@ -46,7 +45,6 @@ rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root,-)
-/usr/bin/%{name}
 /usr/local/openresty/lualib/
 /usr/local/openresty/nginx/conf/conf.d/crowdsec_openresty.conf
 %config(noreplace) /etc/crowdsec/bouncers/%{name}.conf
