@@ -2,7 +2,7 @@ local cs = require "plugins.crowdsec.crowdsec"
 local ngx = ngx
 
 local _M = {}
-local ok, err = cs.init("/etc/nginx/lua/plugins/crowdsec/crowdsec-bouncer.conf", "crowdsec-openresty-bouncer/v0.0.1")
+local ok, err = cs.init("/etc/nginx/lua/plugins/crowdsec/crowdsec-bouncer.conf", "crowdsec-openresty-bouncer/v1.0.0")
 if ok == nil then
     ngx.log(ngx.ERR, "[Crowdsec] " .. err)
     error()
