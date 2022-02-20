@@ -139,4 +139,4 @@ requirement
 gen_config_file
 install
 echo "crowdsec-openresty-bouncer installed successfully"
-echo "Run 'sudo systemctl restart openresty.service' to start openresty-bouncer"
+[ -z ${DOCKER} ] && echo "Run 'sudo systemctl restart openresty.service' to start openresty-bouncer"
