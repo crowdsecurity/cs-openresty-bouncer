@@ -4,7 +4,14 @@ systemctl daemon-reload
 
 START=0
 BOUNCER_CONFIG_PATH="/etc/crowdsec/bouncers/crowdsec-openresty-bouncer.conf"
-
+CERT_FILE=""
+CERTS=(
+    "/etc/pki/tls/certs/ca-bundle.crt"
+    "/etc/pki/tls/cacert.pem"
+    "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem"
+    "/etc/ssl/certs/ca-bundle.crt"
+    "/etc/ssl/certs/ca-certificates.crt"
+)
 
 check_lua_dependency() {
     DEPENDENCY=(
@@ -18,6 +25,8 @@ check_lua_dependency() {
         fi
     done
 }
+
+
 
 if [ "$1" = "configure" ]; then
 
@@ -44,21 +53,40 @@ if [ "$1" = "configure" ]; then
             else
                 echo "API Key : ${API_KEY}"
             fi
-
-            TMP=`mktemp -p /tmp/`
-            cp ${BOUNCER_CONFIG_PATH} ${TMP}
-            API_KEY=${API_KEY} CROWDSEC_LAPI_URL=${CROWDSEC_LAPI_URL} envsubst < ${TMP} > ${BOUNCER_CONFIG_PATH}
-            rm ${TMP}
         fi
-        check_lua_dependency
     fi
+    
+    check_lua_dependency
+    
+    TMP=`mktemp -p /tmp/`
+    cp ${BOUNCER_CONFIG_PATH} ${TMP}
+    API_KEY=${API_KEY} CROWDSEC_LAPI_URL=${CROWDSEC_LAPI_URL} envsubst < ${TMP} > ${BOUNCER_CONFIG_PATH}
+    rm ${TMP}
+    TMP=`mktemp -p /tmp/`
+    cp ${NGINX_CONFIG_PATH} ${TMP}
+    for cert_path in ${CERTS[@]};
+    do
+        if [ -f $cert_path ]; then
+            CERT_FILE=$cert_path
+            break
+        fi
+    done
+    SSL_CERTS_PATH=${CERT_FILE} envsubst < ${TMP} > ${NGINX_CONFIG_PATH}
+    rm ${TMP}
+
+    echo "Add 'include /usr/local/openresty/nginx/conf/conf.d/crowdsec_openresty.conf;' in your nginx configuration file to enable the bouncer."
+
 else
     START=1
 fi
 
-
-if [ ${START} -eq 0 ] ; then
-    echo "no api key was generated"
+if [ "$CERT_FILE" = "" ]; then
+    START=0
+    echo "Unable to find a valid certificate, please provide a valide certificate for the 'lua_ssl_trusted_certificate' directive in ${NGINX_CONFIG_PATH}."
 fi
 
-echo "Restart openresty to enable the crowdsec bouncer : sudo systemctl restart openresty"
+if [ ${START} -eq 0 ] ; then
+    echo "Can't generate an API key for the bouncer. Please do it manually"
+fi
+
+echo "CrowdSec OpenResty Bouncer installed. Restart OpenResty service with 'sudo systemctl restart openresty'"

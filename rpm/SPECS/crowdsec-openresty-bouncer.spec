@@ -119,16 +119,19 @@ if [ "$1" == "1" ] ; then
     done
     SSL_CERTS_PATH=${CERT_FILE} envsubst < ${TMP} > ${NGINX_CONFIG_PATH}
     rm ${TMP}
+
+    echo "Add 'include /usr/local/openresty/nginx/conf/conf.d/crowdsec_openresty.conf;' in your nginx configuration file to enable the bouncer."
+
 else 
     START=1
 fi
 
 if [ "$CERT_FILE" = "" ]; then
-    echo "Unable to find a valid certificate, please provide a valide certificate instead of SSL_CERTS_PATH in ${NGINX_CONFIG_PATH}."
+    echo "Unable to find a valid certificate, please provide a valide certificate for the 'lua_ssl_trusted_certificate' directive in ${NGINX_CONFIG_PATH}."
 fi
 
 
-echo "CrowdSec OpenResty Bouncer installed. Restart openresty service with 'sudo systemctl restart openresty'"
+echo "CrowdSec OpenResty Bouncer installed. Restart OpenResty service with 'sudo systemctl restart openresty'"
 
  
 %changelog
