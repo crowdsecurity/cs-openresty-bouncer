@@ -4,14 +4,6 @@ systemctl daemon-reload
 
 START=0
 BOUNCER_CONFIG_PATH="/etc/crowdsec/bouncers/crowdsec-openresty-bouncer.conf"
-CERT_FILE=""
-CERTS=(
-    "/etc/pki/tls/certs/ca-bundle.crt"
-    "/etc/pki/tls/cacert.pem"
-    "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem"
-    "/etc/ssl/certs/ca-bundle.crt"
-    "/etc/ssl/certs/ca-certificates.crt"
-)
 
 check_lua_dependency() {
     DEPENDENCY=(
@@ -25,7 +17,6 @@ check_lua_dependency() {
         fi
     done
 }
-
 
 
 if [ "$1" = "configure" ]; then
@@ -57,32 +48,11 @@ if [ "$1" = "configure" ]; then
     fi
     
     check_lua_dependency
-    
-    TMP=`mktemp -p /tmp/`
-    cp ${BOUNCER_CONFIG_PATH} ${TMP}
-    API_KEY=${API_KEY} CROWDSEC_LAPI_URL=${CROWDSEC_LAPI_URL} envsubst < ${TMP} > ${BOUNCER_CONFIG_PATH}
-    rm ${TMP}
-    TMP=`mktemp -p /tmp/`
-    cp ${NGINX_CONFIG_PATH} ${TMP}
-    for cert_path in ${CERTS[@]};
-    do
-        if [ -f $cert_path ]; then
-            CERT_FILE=$cert_path
-            break
-        fi
-    done
-    SSL_CERTS_PATH=${CERT_FILE} envsubst < ${TMP} > ${NGINX_CONFIG_PATH}
-    rm ${TMP}
 
     echo "Add 'include /usr/local/openresty/nginx/conf/conf.d/crowdsec_openresty.conf;' in your nginx configuration file to enable the bouncer."
 
 else
     START=1
-fi
-
-if [ "$CERT_FILE" = "" ]; then
-    START=0
-    echo "Unable to find a valid certificate, please provide a valide certificate for the 'lua_ssl_trusted_certificate' directive in ${NGINX_CONFIG_PATH}."
 fi
 
 if [ ${START} -eq 0 ] ; then
