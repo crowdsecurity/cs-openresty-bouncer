@@ -4,6 +4,8 @@ systemctl daemon-reload
 
 START=0
 BOUNCER_CONFIG_PATH="/etc/crowdsec/bouncers/crowdsec-openresty-bouncer.conf"
+API_KEY="<API_KEY>"
+CROWDSEC_LAPI_URL="<LAPI_URL>"
 
 check_lua_dependency() {
     DEPENDENCY=(
@@ -46,6 +48,11 @@ if [ "$1" = "configure" ]; then
             fi
         fi
     fi
+
+    TMP=`mktemp -p /tmp/`
+    cp ${BOUNCER_CONFIG_PATH} ${TMP}
+    API_KEY=${API_KEY} CROWDSEC_LAPI_URL=${CROWDSEC_LAPI_URL} envsubst < ${TMP} > ${BOUNCER_CONFIG_PATH}
+    rm ${TMP}
     
     check_lua_dependency
 
