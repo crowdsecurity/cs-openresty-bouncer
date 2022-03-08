@@ -13,21 +13,21 @@ SSL_CERTS_PATH="/etc/ssl/certs/ca-certificates.crt"
 while [[ $# -gt 0 ]]
 do
     case $1 in
-	    --NGINX_CONF_DIR=*)
-		    NGINX_CONF_DIR="${1#*=}"
-	    ;;
-	    --LIB_PATH=*)
-	        LIB_PATH="${1#*=}"
+        --NGINX_CONF_DIR=*)
+            NGINX_CONF_DIR="${1#*=}"
         ;;
-	    --CONFIG_PATH=*)
-		    CONFIG_PATH="${1#*=}"
-	    ;;
+        --LIB_PATH=*)
+            LIB_PATH="${1#*=}"
+        ;;
+        --CONFIG_PATH=*)
+            CONFIG_PATH="${1#*=}"
+        ;;
         --DATA_PATH=*)
-		    DATA_PATH="${1#*=}"
-	    ;;
+            DATA_PATH="${1#*=}"
+        ;;
         --docker)
-		    DOCKER="1"
-	    ;;
+            DOCKER="1"
+        ;;
     esac
     shift
 done
@@ -60,18 +60,13 @@ requirement() {
 gen_config_file() {
     #Don't overwrite the existing file
     if [ ! -f "${CONFIG_PATH}/crowdsec-openresty-bouncer.conf" ]; then
-        if [ -z ${DOCKER} ]; then
+        #check if cscli is available, this can be installed on systems without crowdsec installed
+        if cscli version 2>&1 /dev/null; then
             SUFFIX=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 8)
             API_KEY=$(cscli bouncers add "crowdsec-openresty-bouncer-${SUFFIX}" -o raw) 
-            API_KEY=${API_KEY} CROWDSEC_LAPI_URL="http://127.0.0.1:8080" envsubst < ./config/config_example.conf > "${CONFIG_PATH}/crowdsec-openresty-bouncer.conf"
-            echo "New API key generated to be used in '${CONFIG_PATH}/crowdsec-openresty-bouncer.conf'"
-        else
-            #Docker doesn't support envsubst by default
-            API_KEY="1234567890abcdef"
-            cp config/config_example.conf "${CONFIG_PATH}/crowdsec-openresty-bouncer.conf"
-            sed -i 's|API_KEY=.*|API_KEY='${API_KEY}'|' "${CONFIG_PATH}/crowdsec-openresty-bouncer.conf"
-            sed -i 's|CROWDSEC_LAPI_URL=.*|CROWDSEC_LAPI_URL="http://127.0.0.1:8080"|' "${CONFIG_PATH}/crowdsec-openresty-bouncer.conf"
         fi
+        API_KEY=${API_KEY} CROWDSEC_LAPI_URL="http://127.0.0.1:8080" envsubst < ./config/config_example.conf > "${CONFIG_PATH}/crowdsec-openresty-bouncer.conf"
+        echo "New API key generated to be used in '${CONFIG_PATH}/crowdsec-openresty-bouncer.conf'"
     else
         #Patch the existing file with new parameters if the need to be added
         echo "Patch crowdsec-openresty-bouncer.conf .." 
@@ -81,11 +76,10 @@ gen_config_file() {
             grep -vf /tmp/crowdsec.conf.raw /tmp/config_example.conf.raw > /tmp/config_example.newvals
             cp "${CONFIG_PATH}/crowdsec-openresty-bouncer.conf" "${CONFIG_PATH}/crowdsec-openresty-bouncer.conf.bak"
             #Make sure we start on a new line.
-             echo "" >>"${CONFIG_PATH}/crowdsec-openresty-bouncer.conf"
+            echo "" >>"${CONFIG_PATH}/crowdsec-openresty-bouncer.conf"
             grep -f /tmp/config_example.newvals /tmp/crowdsec/config/config_example.conf >> "${CONFIG_PATH}/crowdsec-openresty-bouncer.conf"
         fi
     fi
-    # Not sure why couldn't patch the path using envsubst
     sed -i 's|/var/lib/crowdsec/lua|'"${DATA_PATH}"'|' "${CONFIG_PATH}/crowdsec-openresty-bouncer.conf"
 }
 
@@ -139,13 +133,7 @@ install() {
     cp -r lua/lib/* "${LIB_PATH}/"
     cp templates/* "${DATA_PATH}/templates/"
     #Patch the nginx config file
-    if [ -z ${DOCKER} ]; then
-        SSL_CERTS_PATH=${SSL_CERTS_PATH} envsubst < openresty/${NGINX_CONF} > "${NGINX_CONF_DIR}/${NGINX_CONF}"
-    else
-        cp openresty/${NGINX_CONF} "${NGINX_CONF_DIR}/${NGINX_CONF}"
-        # shellcheck disable=SC2016 #We need to change the actual variable here
-        sed -i 's|${SSL_CERTS_PATH}|'${SSL_CERTS_PATH}'|' "${NGINX_CONF_DIR}/${NGINX_CONF}"
-    fi
+    SSL_CERTS_PATH=${SSL_CERTS_PATH} envsubst < openresty/${NGINX_CONF} > "${NGINX_CONF_DIR}/${NGINX_CONF}"
     sed -i 's|/etc/crowdsec/bouncers|'"${CONFIG_PATH}"'|' "${NGINX_CONF_DIR}/${NGINX_CONF}"
     #Some docker images like Nginx Proxy Manager has this defined already.
     [ -z ${DOCKER} ] || sed -i 's|resolver local=on ipv6=off;||' "${NGINX_CONF_DIR}/${NGINX_CONF}"
