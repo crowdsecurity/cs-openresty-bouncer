@@ -66,7 +66,7 @@ gen_config_file() {
             API_KEY=$(cscli bouncers add "crowdsec-openresty-bouncer-${SUFFIX}" -o raw) 
         fi
         API_KEY=${API_KEY} CROWDSEC_LAPI_URL="http://127.0.0.1:8080" envsubst < ./config/config_example.conf > "${CONFIG_PATH}/crowdsec-openresty-bouncer.conf"
-        echo "New API key generated to be used in '${CONFIG_PATH}/crowdsec-openresty-bouncer.conf'"
+        [ -n "${API_KEY}" ] && echo "New API key generated to be used in '${CONFIG_PATH}/crowdsec-openresty-bouncer.conf'"
     else
         #Patch the existing file with new parameters if the need to be added
         echo "Patch crowdsec-openresty-bouncer.conf .." 
