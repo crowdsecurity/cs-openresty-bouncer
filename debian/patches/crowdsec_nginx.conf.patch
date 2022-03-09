@@ -9,7 +9,7 @@ Index: openresty/crowdsec_openresty.conf
 +lua_ssl_trusted_certificate /etc/ssl/certs/ca-certificates.crt;
  init_by_lua_block {
  	cs = require "crowdsec"
- 	local ok, err = cs.init("/etc/crowdsec/bouncers/crowdsec-openresty-bouncer.conf", "crowdsec-openresty-bouncer/v0.0.1")
+ 	local ok, err = cs.init("/etc/crowdsec/bouncers/crowdsec-openresty-bouncer.conf", "crowdsec-openresty-bouncer/v1.0.0")
 @@ -14,4 +14,4 @@ init_by_lua_block {
  access_by_lua_block {
  	local cs = require "crowdsec"
