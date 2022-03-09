@@ -2,7 +2,7 @@ Index: openresty/crowdsec_openresty.conf
 ===================================================================
 --- openresty/crowdsec_openresty.conf.orig
 +++ openresty/crowdsec_openresty.conf
-@@ -1,7 +1,7 @@
+@@ -1,6 +1,6 @@
  lua_package_path '$prefix/../lualib/plugins/crowdsec/?.lua;;';
  lua_shared_dict crowdsec_cache 50m;
 -lua_ssl_trusted_certificate ${SSL_CERTS_PATH};
@@ -10,7 +10,7 @@ Index: openresty/crowdsec_openresty.conf
  init_by_lua_block {
  	cs = require "crowdsec"
  	local ok, err = cs.init("/etc/crowdsec/bouncers/crowdsec-openresty-bouncer.conf", "crowdsec-openresty-bouncer/v0.0.1")
-@@ -15,4 +15,4 @@ init_by_lua_block {
+@@ -14,4 +14,4 @@ init_by_lua_block {
  access_by_lua_block {
  	local cs = require "crowdsec"
  	cs.Allow(ngx.var.remote_addr)
