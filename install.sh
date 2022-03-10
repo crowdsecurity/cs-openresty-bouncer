@@ -37,7 +37,7 @@ check_pkg_manager(){
         PKG="yum"
         PACKAGE_LIST="yum list installed"
         SSL_CERTS_PATH="/etc/ssl/certs/ca-bundle.crt"
-    elif grep -q "Amazon Linux release 2 (Karoo)" < /etc/system-release ; then
+    elif cat /etc/system-release | grep -q "Amazon Linux release 2 (Karoo)"; then
         PKG="yum"
         PACKAGE_LIST="yum list installed"
         SSL_CERTS_PATH="/etc/ssl/certs/ca-bundle.crt"
@@ -152,5 +152,6 @@ requirement
 gen_config_file
 install
 echo "crowdsec-openresty-bouncer installed successfully"
+[ -z ${DOCKER} ] && echo "Add 'include /usr/local/openresty/nginx/conf/conf.d/crowdsec_openresty.conf;' in your nginx configuration file to enable the bouncer."
 [ -z ${DOCKER} ] && echo "Run 'sudo systemctl restart openresty.service' to start openresty-bouncer"
 exit 0
