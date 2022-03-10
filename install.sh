@@ -68,7 +68,7 @@ gen_config_file() {
     #Don't overwrite the existing file
     if [ ! -f "${CONFIG_PATH}/crowdsec-openresty-bouncer.conf" ]; then
         #check if cscli is available, this can be installed on systems without crowdsec installed
-        if cscli version 2>&1 /dev/null; then
+        if command -v cscli >/dev/null; then
             SUFFIX=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 8)
             API_KEY=$(cscli bouncers add "crowdsec-openresty-bouncer-${SUFFIX}" -o raw)
             PORT=$(cscli config show --key "Config.API.Server.ListenURI"|cut -d ":" -f2)
