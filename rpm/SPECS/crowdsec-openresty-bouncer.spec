@@ -60,6 +60,7 @@ BOUNCER_CONFIG_PATH="/etc/crowdsec/bouncers/crowdsec-openresty-bouncer.conf"
 CERT_FILE=""
 CERT_OK=0
 START=0
+LAPI_DEFAULT_PORT="8080"
 
 CERTS=(
     "/etc/pki/tls/certs/ca-bundle.crt"
@@ -92,7 +93,11 @@ if [ "$1" == "1" ] ; then
         echo "cscli/crowdsec is present, generating API key"
         unique=`date +%s`
         API_KEY=`cscli -oraw bouncers add crowdsec-openresty-bouncer-${unique}`
-        CROWDSEC_LAPI_URL="http://127.0.0.1:8080"
+        PORT=$(cscli config show --key "Config.API.Server.ListenURI"|cut -d ":" -f2)
+        if [ ! -z "$PORT" ]; then
+            LAPI_DEFAULT_PORT=${PORT}
+        fi
+        CROWDSEC_LAPI_URL="http://127.0.0.1:${LAPI_DEFAULT_PORT}"
         if [ $? -eq 1 ] ; then
             echo "failed to create API token, service won't be started."
             START=0

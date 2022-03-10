@@ -8,6 +8,7 @@ DATA_PATH="/var/lib/crowdsec/lua/"
 PKG="apt"
 PACKAGE_LIST="dpkg -l"
 SSL_CERTS_PATH="/etc/ssl/certs/ca-certificates.crt"
+LAPI_DEFAULT_PORT="8080"
 
 #Accept cmdline arguments to overwrite options.
 while [[ $# -gt 0 ]]
@@ -65,9 +66,14 @@ gen_config_file() {
         #check if cscli is available, this can be installed on systems without crowdsec installed
         if cscli version 2>&1 /dev/null; then
             SUFFIX=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 8)
-            API_KEY=$(cscli bouncers add "crowdsec-openresty-bouncer-${SUFFIX}" -o raw) 
+            API_KEY=$(cscli bouncers add "crowdsec-openresty-bouncer-${SUFFIX}" -o raw)
+            PORT=$(cscli config show --key "Config.API.Server.ListenURI"|cut -d ":" -f2)
+            if [ ! -z "$PORT" ]; then
+                LAPI_DEFAULT_PORT=${PORT}
+            fi
+            CROWDSEC_LAPI_URL="http://127.0.0.1:${LAPI_DEFAULT_PORT}"
         fi
-        API_KEY=${API_KEY} CROWDSEC_LAPI_URL="http://127.0.0.1:8080" envsubst < ./config/config_example.conf > "${CONFIG_PATH}/crowdsec-openresty-bouncer.conf"
+        API_KEY=${API_KEY} CROWDSEC_LAPI_URL="${CROWDSEC_LAPI_URL}" envsubst < ./config/config_example.conf > "${CONFIG_PATH}/crowdsec-openresty-bouncer.conf"
         [ -n "${API_KEY}" ] && echo "New API key generated to be used in '${CONFIG_PATH}/crowdsec-openresty-bouncer.conf'"
     else
         #Patch the existing file with new parameters if the need to be added
