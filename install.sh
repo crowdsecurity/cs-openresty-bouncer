@@ -9,6 +9,7 @@ PKG="apt"
 PACKAGE_LIST="dpkg -l"
 SSL_CERTS_PATH="/etc/ssl/certs/ca-certificates.crt"
 LAPI_DEFAULT_PORT="8080"
+SILENT="false"
 
 #Accept cmdline arguments to overwrite options.
 while [[ $# -gt 0 ]]
@@ -25,6 +26,9 @@ do
         ;;
         --DATA_PATH=*)
             DATA_PATH="${1#*=}"
+        ;;
+        --unattended)
+            SILENT="true"
         ;;
         --docker)
             DOCKER="1"
@@ -98,16 +102,20 @@ check_openresty_dependency() {
     for dep in "${DEPENDENCY[@]}";
     do
         if ! $PACKAGE_LIST | grep "${dep}" > /dev/null; then
-            echo "${dep} not found, do you want to install it (Y/n)? "
-            read -r answer
-            if [[ ${answer} == "" ]]; then
-                answer="y"
-            fi
-            if [ "$answer" != "${answer#[Yy]}" ] ;then
+            if [[ ${SILENT} == "true" ]]; then
                 "$PKG" install -y -qq "${dep}" > /dev/null && echo "${dep} successfully installed"
             else
-                echo "unable to continue without ${dep}. Exiting" && exit 1
-            fi      
+                echo "${dep} not found, do you want to install it (Y/n)? "
+                read -r answer
+                if [[ ${answer} == "" ]]; then
+                    answer="y"
+                fi
+                if [ "$answer" != "${answer#[Yy]}" ] ;then
+                    "$PKG" install -y -qq "${dep}" > /dev/null && echo "${dep} successfully installed"
+                else
+                    echo "unable to continue without ${dep}. Exiting" && exit 1
+                fi
+            fi
         fi
     done
 }
@@ -120,16 +128,20 @@ check_lua_dependency() {
     do
         
         if ! opm list | grep "${dep}" > /dev/null; then
-            echo "${dep} not found, do you want to install it (Y/n)? "
-            read -r answer
-            if [[ ${answer} == "" ]]; then
-                answer="y"
-            fi
-            if [ "$answer" != "${answer#[Yy]}" ] ;then
+            if [[ ${SILENT} == "true" ]]; then
                 opm get "${dep}" > /dev/null && echo "${dep} successfully installed"
             else
-                echo "unable to continue without ${dep}. Exiting" && exit 1
-            fi      
+                echo "${dep} not found, do you want to install it (Y/n)? "
+                read -r answer
+                if [[ ${answer} == "" ]]; then
+                    answer="y"
+                fi
+                if [ "$answer" != "${answer#[Yy]}" ] ;then
+                    opm get "${dep}" > /dev/null && echo "${dep} successfully installed"
+                else
+                    echo "unable to continue without ${dep}. Exiting" && exit 1
+                fi
+            fi
         fi
     done
 }
