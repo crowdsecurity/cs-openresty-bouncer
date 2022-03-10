@@ -135,6 +135,8 @@ echo "CrowdSec OpenResty Bouncer installed. Restart OpenResty service with 'sudo
 
 %postun -p /bin/bash
 echo "Don't forget to remove 'include /usr/local/openresty/nginx/conf/conf.d/crowdsec_openresty.conf;' in your nginx configuration file to disable the bouncer and make openresty start again."
+echo ""
+echo "Run 'sudo systemctl restart openresty.service' to stop openresty-bouncer"
  
 %changelog
 * Tue Feb 1 2022 Kevin Kadosh <kevin@crowdsec.net>
