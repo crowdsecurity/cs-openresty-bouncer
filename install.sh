@@ -172,6 +172,8 @@ requirement
 gen_config_file
 install
 echo "crowdsec-openresty-bouncer installed successfully"
+echo ""
 [ -z ${DOCKER} ] && echo "Add 'include /usr/local/openresty/nginx/conf/conf.d/crowdsec_openresty.conf;' in your nginx configuration file to enable the bouncer."
+echo ""
 [ -z ${DOCKER} ] && echo "Run 'sudo systemctl restart openresty.service' to start openresty-bouncer"
 exit 0
