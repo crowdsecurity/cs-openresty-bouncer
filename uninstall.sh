@@ -5,6 +5,18 @@ NGINX_CONF_DIR="/usr/local/openresty/nginx/conf/conf.d/"
 LIB_PATH="/usr/local/openresty/lualib/plugins/crowdsec/"
 PKG="apt"
 PACKAGE_LIST="dpkg -l"
+SILENT="false"
+
+#Accept cmdline arguments to overwrite options.
+while [[ $# -gt 0 ]]
+do
+    case $1 in
+        -y|--yes)
+            SILENT="true"
+        ;;
+    esac
+    shift
+done
 
 check_pkg_manager(){
     if [ -f /etc/redhat-release ]; then
@@ -32,14 +44,18 @@ remove_lua_dependency() {
     do
         opm list | grep ${dep} > /dev/null
         if [[ $? == 0 ]]; then
-            echo "${dep} found, do you want to remove it (Y/n)? "
-            read answer
-            if [[ ${answer} == "" ]]; then
-                answer="y"
-            fi
-            if [ "$answer" != "${answer#[Yy]}" ] ;then
+            if [[ ${SILENT} == "true" ]]; then
                 opm remove ${dep} > /dev/null && echo "${dep} successfully removed"
-            fi      
+            else
+                echo "${dep} found, do you want to remove it (Y/n)? "
+                read answer
+                if [[ ${answer} == "" ]]; then
+                    answer="y"
+                fi
+                if [ "$answer" != "${answer#[Yy]}" ] ;then
+                    opm remove ${dep} > /dev/null && echo "${dep} successfully removed"
+                fi
+            fi   
         fi
     done
 }
@@ -52,14 +68,18 @@ remove_openresty_dependency() {
     do
         $PACKAGE_LIST | grep ${dep} > /dev/null
         if [[ $? == 0 ]]; then
-            echo "${dep} found, do you want to remove it (Y/n)? "
-            read answer
-            if [[ ${answer} == "" ]]; then
-                answer="y"
-            fi
-            if [ "$answer" != "${answer#[Yy]}" ] ;then
+            if [[ ${SILENT} == "true" ]]; then
                 $PKG -y -qq ${dep} > /dev/null && echo "${dep} successfully removed"
-            fi      
+            else
+                echo "${dep} found, do you want to remove it (Y/n)? "
+                read answer
+                if [[ ${answer} == "" ]]; then
+                    answer="y"
+                fi
+                if [ "$answer" != "${answer#[Yy]}" ] ;then
+                    $PKG -y -qq ${dep} > /dev/null && echo "${dep} successfully removed"
+                fi
+            fi 
         fi
     done
 }
