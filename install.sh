@@ -8,6 +8,8 @@ DATA_PATH="/var/lib/crowdsec/lua/"
 PKG="apt"
 PACKAGE_LIST="dpkg -l"
 SSL_CERTS_PATH="/etc/ssl/certs/ca-certificates.crt"
+LAPI_DEFAULT_PORT="8080"
+SILENT="false"
 
 #Accept cmdline arguments to overwrite options.
 while [[ $# -gt 0 ]]
@@ -25,6 +27,9 @@ do
         --DATA_PATH=*)
             DATA_PATH="${1#*=}"
         ;;
+        -y|--yes)
+            SILENT="true"
+        ;;
         --docker)
             DOCKER="1"
         ;;
@@ -37,10 +42,12 @@ check_pkg_manager(){
         PKG="yum"
         PACKAGE_LIST="yum list installed"
         SSL_CERTS_PATH="/etc/ssl/certs/ca-bundle.crt"
-    elif grep -q "Amazon Linux release 2 (Karoo)" < /etc/system-release ; then
-        PKG="yum"
-        PACKAGE_LIST="yum list installed"
-        SSL_CERTS_PATH="/etc/ssl/certs/ca-bundle.crt"
+    elif [ -f /etc/system-release ]; then
+        if grep -q "Amazon Linux release 2 (Karoo)" < /etc/system-release ; then
+            PKG="yum"
+            PACKAGE_LIST="yum list installed"
+            SSL_CERTS_PATH="/etc/ssl/certs/ca-bundle.crt"
+        fi
     elif [ -f /etc/debian_version ]; then
         PKG="apt"
         PACKAGE_LIST="dpkg -l"
@@ -61,11 +68,16 @@ gen_config_file() {
     #Don't overwrite the existing file
     if [ ! -f "${CONFIG_PATH}/crowdsec-openresty-bouncer.conf" ]; then
         #check if cscli is available, this can be installed on systems without crowdsec installed
-        if cscli version 2>&1 /dev/null; then
+        if command -v cscli >/dev/null; then
             SUFFIX=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 8)
-            API_KEY=$(cscli bouncers add "crowdsec-openresty-bouncer-${SUFFIX}" -o raw) 
+            API_KEY=$(cscli bouncers add "crowdsec-openresty-bouncer-${SUFFIX}" -o raw)
+            PORT=$(cscli config show --key "Config.API.Server.ListenURI"|cut -d ":" -f2)
+            if [ ! -z "$PORT" ]; then
+                LAPI_DEFAULT_PORT=${PORT}
+            fi
+            CROWDSEC_LAPI_URL="http://127.0.0.1:${LAPI_DEFAULT_PORT}"
         fi
-        API_KEY=${API_KEY} CROWDSEC_LAPI_URL="http://127.0.0.1:8080" envsubst < ./config/config_example.conf > "${CONFIG_PATH}/crowdsec-openresty-bouncer.conf"
+        API_KEY=${API_KEY} CROWDSEC_LAPI_URL="${CROWDSEC_LAPI_URL}" envsubst < ./config/config_example.conf > "${CONFIG_PATH}/crowdsec-openresty-bouncer.conf"
         [ -n "${API_KEY}" ] && echo "New API key generated to be used in '${CONFIG_PATH}/crowdsec-openresty-bouncer.conf'"
     else
         #Patch the existing file with new parameters if the need to be added
@@ -90,16 +102,20 @@ check_openresty_dependency() {
     for dep in "${DEPENDENCY[@]}";
     do
         if ! $PACKAGE_LIST | grep "${dep}" > /dev/null; then
-            echo "${dep} not found, do you want to install it (Y/n)? "
-            read -r answer
-            if [[ ${answer} == "" ]]; then
-                answer="y"
-            fi
-            if [ "$answer" != "${answer#[Yy]}" ] ;then
+            if [[ ${SILENT} == "true" ]]; then
                 "$PKG" install -y -qq "${dep}" > /dev/null && echo "${dep} successfully installed"
             else
-                echo "unable to continue without ${dep}. Exiting" && exit 1
-            fi      
+                echo "${dep} not found, do you want to install it (Y/n)? "
+                read -r answer
+                if [[ ${answer} == "" ]]; then
+                    answer="y"
+                fi
+                if [ "$answer" != "${answer#[Yy]}" ] ;then
+                    "$PKG" install -y -qq "${dep}" > /dev/null && echo "${dep} successfully installed"
+                else
+                    echo "unable to continue without ${dep}. Exiting" && exit 1
+                fi
+            fi
         fi
     done
 }
@@ -112,16 +128,20 @@ check_lua_dependency() {
     do
         
         if ! opm list | grep "${dep}" > /dev/null; then
-            echo "${dep} not found, do you want to install it (Y/n)? "
-            read -r answer
-            if [[ ${answer} == "" ]]; then
-                answer="y"
-            fi
-            if [ "$answer" != "${answer#[Yy]}" ] ;then
+            if [[ ${SILENT} == "true" ]]; then
                 opm get "${dep}" > /dev/null && echo "${dep} successfully installed"
             else
-                echo "unable to continue without ${dep}. Exiting" && exit 1
-            fi      
+                echo "${dep} not found, do you want to install it (Y/n)? "
+                read -r answer
+                if [[ ${answer} == "" ]]; then
+                    answer="y"
+                fi
+                if [ "$answer" != "${answer#[Yy]}" ] ;then
+                    opm get "${dep}" > /dev/null && echo "${dep} successfully installed"
+                else
+                    echo "unable to continue without ${dep}. Exiting" && exit 1
+                fi
+            fi
         fi
     done
 }
@@ -152,5 +172,8 @@ requirement
 gen_config_file
 install
 echo "crowdsec-openresty-bouncer installed successfully"
+echo ""
+[ -z ${DOCKER} ] && echo "Add 'include /usr/local/openresty/nginx/conf/conf.d/crowdsec_openresty.conf;' in your nginx configuration file to enable the bouncer."
+echo ""
 [ -z ${DOCKER} ] && echo "Run 'sudo systemctl restart openresty.service' to start openresty-bouncer"
 exit 0
