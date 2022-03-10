@@ -37,10 +37,12 @@ check_pkg_manager(){
         PKG="yum"
         PACKAGE_LIST="yum list installed"
         SSL_CERTS_PATH="/etc/ssl/certs/ca-bundle.crt"
-    elif cat /etc/system-release | grep -q "Amazon Linux release 2 (Karoo)"; then
-        PKG="yum"
-        PACKAGE_LIST="yum list installed"
-        SSL_CERTS_PATH="/etc/ssl/certs/ca-bundle.crt"
+    elif [ -f /etc/system-release ]; then
+        if grep -q "Amazon Linux release 2 (Karoo)" < /etc/system-release ; then
+            PKG="yum"
+            PACKAGE_LIST="yum list installed"
+            SSL_CERTS_PATH="/etc/ssl/certs/ca-bundle.crt"
+        fi
     elif [ -f /etc/debian_version ]; then
         PKG="apt"
         PACKAGE_LIST="dpkg -l"
