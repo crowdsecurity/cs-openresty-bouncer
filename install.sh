@@ -27,7 +27,7 @@ do
         --DATA_PATH=*)
             DATA_PATH="${1#*=}"
         ;;
-        --unattended)
+        -y|--yes)
             SILENT="true"
         ;;
         --docker)
