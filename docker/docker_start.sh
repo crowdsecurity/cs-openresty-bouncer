@@ -54,6 +54,7 @@ if [ "$CAPTCHA_EXPIRATION" != "" ]; then
     sed -i "s,CAPTCHA_EXPIRATION.*,CAPTCHA_EXPIRATION=$CAPTCHA_EXPIRATION," $CROWDSEC_BOUNCER_CONFIG
 fi
 
-if [ "${IS_LUALIB_IMAGE,,}" != "true" ]; then
+IS_LUALIB_IMAGE=$(echo $IS_LUALIB_IMAGE | tr A-Z a-z)
+if [ "$IS_LUALIB_IMAGE" != "true" ]; then
     exec /usr/local/openresty/bin/openresty -g "daemon off;"
 fi
