@@ -157,6 +157,7 @@ install() {
     sed -i 's|/etc/crowdsec/bouncers|'"${CONFIG_PATH}"'|' "${NGINX_CONF_DIR}/${NGINX_CONF}"
     #Some docker images like Nginx Proxy Manager has this defined already.
     [ -z ${DOCKER} ] || sed -i 's|resolver local=on ipv6=off;||' "${NGINX_CONF_DIR}/${NGINX_CONF}"
+    [ -z ${DOCKER} ] || sed -i '/lua_ssl_trusted_certificate.*/d' "${NGINX_CONF_DIR}/${NGINX_CONF}"
 }
 
 
