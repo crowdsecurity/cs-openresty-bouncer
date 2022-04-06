@@ -157,8 +157,6 @@ install() {
     #Patch the nginx config file
     SSL_CERTS_PATH=${SSL_CERTS_PATH} envsubst < openresty/${NGINX_CONF} > "${NGINX_CONF_DIR}/${NGINX_CONF}"
     sed -i 's|/etc/crowdsec/bouncers|'"${CONFIG_PATH}"'|' "${NGINX_CONF_DIR}/${NGINX_CONF}"
-    #Some docker images like Nginx Proxy Manager has this defined already.
-    [ -z ${DOCKER} ] || sed -i 's|resolver local=on ipv6=off;||' "${NGINX_CONF_DIR}/${NGINX_CONF}"
 }
 
 
