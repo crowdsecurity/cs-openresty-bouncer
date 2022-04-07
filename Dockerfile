@@ -18,6 +18,7 @@ RUN cp lua-cs-bouncer/config_example.conf /etc/crowdsec/bouncers/crowdsec-openre
 RUN rm -rf ./lua-cs-bouncer/
 COPY ./openresty /tmp
 RUN SSL_CERTS_PATH=/etc/ssl/certs/ca-certificates.crt envsubst < /tmp/crowdsec_openresty.conf > /etc/nginx/conf.d/crowdsec_openresty.conf
+RUN sed -i '1 i\resolver local=on ipv6=off;' /etc/nginx/conf.d/crowdsec_openresty.conf
 COPY ./docker/docker_start.sh /
 
 ENTRYPOINT /bin/bash docker_start.sh

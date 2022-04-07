@@ -27,6 +27,9 @@ do
         --DATA_PATH=*)
             DATA_PATH="${1#*=}"
         ;;
+        --SSL_CERTS_PATH=*)
+            SSL_CERTS_PATH="${1#*=}"
+        ;;
         -y|--yes)
             SILENT="true"
         ;;
@@ -149,14 +152,11 @@ check_lua_dependency() {
 
 install() {
     mkdir -p "${DATA_PATH}/templates/"
-
     cp -r lua/lib/* "${LIB_PATH}/"
     cp templates/* "${DATA_PATH}/templates/"
     #Patch the nginx config file
     SSL_CERTS_PATH=${SSL_CERTS_PATH} envsubst < openresty/${NGINX_CONF} > "${NGINX_CONF_DIR}/${NGINX_CONF}"
     sed -i 's|/etc/crowdsec/bouncers|'"${CONFIG_PATH}"'|' "${NGINX_CONF_DIR}/${NGINX_CONF}"
-    #Some docker images like Nginx Proxy Manager has this defined already.
-    [ -z ${DOCKER} ] || sed -i 's|resolver local=on ipv6=off;||' "${NGINX_CONF_DIR}/${NGINX_CONF}"
 }
 
 
