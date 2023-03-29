@@ -74,6 +74,9 @@ For others parameters, you can use environment variables below or mount your own
 * `REQUEST_TIMEOUT`  - Request timeout (in seconds) for LAPI request (default: `0.2`) : `-e REQUEST_TIMEOUT="0.2"`
 * `UPDATE_FREQUENCY` - [For 'stream' mode only] pull frequency (in seconds) from LAPI (default: `10`) : `-e UPDATE_FREQUENCY="10"`
 * `MODE`             - Bouncer mode : streaming (`stream`) or rupture (`live`) mode (default: `stream`) : `-e MODE="stream"`
+* `CAPTCHA_PROVIDER` - The selected captcha provider for your `SITE_KEY` and `SECRET_KEY`. Valid providers are recaptcha, hcaptcha or turnstile. For backwards compatability the default is recaptcha if not provided.
+* `SITE_KEY`         - The site key for the selected captcha provider.
+* `SECRET_KEY`       - The secret key for the selected captcha provider.
 
 ### Volumes
 
