@@ -80,7 +80,7 @@ gen_config_file() {
             fi
             CROWDSEC_LAPI_URL="http://127.0.0.1:${LAPI_DEFAULT_PORT}"
         fi
-        API_KEY=${API_KEY} CROWDSEC_LAPI_URL="${CROWDSEC_LAPI_URL}" envsubst < ./config/config_example.conf > "${CONFIG_PATH}/crowdsec-openresty-bouncer.conf"
+        API_KEY=${API_KEY} CROWDSEC_LAPI_URL="${CROWDSEC_LAPI_URL}" envsubst '$API_KEY $CROWDSEC_LAPI_URL' < ./config/config_example.conf > "${CONFIG_PATH}/crowdsec-openresty-bouncer.conf"
         [ -n "${API_KEY}" ] && echo "New API key generated to be used in '${CONFIG_PATH}/crowdsec-openresty-bouncer.conf'"
     else
         #Patch the existing file with new parameters if the need to be added
@@ -155,7 +155,7 @@ install() {
     cp -r lua/lib/* "${LIB_PATH}/"
     cp templates/* "${DATA_PATH}/templates/"
     #Patch the nginx config file
-    SSL_CERTS_PATH=${SSL_CERTS_PATH} envsubst < openresty/${NGINX_CONF} > "${NGINX_CONF_DIR}/${NGINX_CONF}"
+    SSL_CERTS_PATH=${SSL_CERTS_PATH} envsubst '$SSL_CERTS_PATH' < openresty/${NGINX_CONF} > "${NGINX_CONF_DIR}/${NGINX_CONF}"
     sed -i 's|/etc/crowdsec/bouncers|'"${CONFIG_PATH}"'|' "${NGINX_CONF_DIR}/${NGINX_CONF}"
 }
 
