@@ -10,7 +10,7 @@ Index: openresty/crowdsec_openresty.conf
 
  init_by_lua_block {
  	cs = require "crowdsec"
- 	local ok, err = cs.init("/etc/crowdsec/bouncers/crowdsec-openresty-bouncer.conf", "crowdsec-openresty-bouncer/v0.1.11")
+ 	local ok, err = cs.init("/etc/crowdsec/bouncers/crowdsec-openresty-bouncer.conf", "crowdsec-openresty-bouncer/v1.0.1")
 @@ -14,4 +14,4 @@ init_by_lua_block {
  access_by_lua_block {
  	local cs = require "crowdsec"
