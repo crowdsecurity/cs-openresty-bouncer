@@ -14,9 +14,9 @@ check_lua_dependency() {
     )
     for dep in ${DEPENDENCY[@]};
     do
-        opm list | grep ${dep} > /dev/null
+        opm list | grep "${dep}" > /dev/null
         if [[ $? != 0 ]]; then
-            opm get ${dep} > /dev/null && echo "${dep} successfully installed"     
+            opm get "${dep}" > /dev/null && echo "${dep} successfully installed"     
         fi
     done
 }
@@ -35,13 +35,13 @@ if [ "$1" = "configure" ]; then
             fi
         fi
         API=$(cscli config show --key "Config.API.Server")
-        if [ "$API" = "nil" || "$API" = "<nil>"] ; then
+        if [ "$API" = "nil" ] || [ "$API" = "<nil>" ] ; then
             API_KEY_REQUIRED=false
         fi
         if [ ${API_KEY_REQUIRED} = true ] ; then
             echo "cscli/crowdsec is present, generating API key"
-            unique=`date +%s`
-            API_KEY=`cscli -oraw bouncers add crowdsec-openresty-bouncer-${unique}`
+            unique=$(date +%s)
+            API_KEY=$(cscli -oraw bouncers add crowdsec-openresty-bouncer-"${unique}")
             PORT=$(cscli config show --key "Config.API.Server.ListenURI"|cut -d ":" -f2)
             if [ ! -z "$PORT" ]; then
                 LAPI_DEFAULT_PORT=${PORT}
@@ -53,10 +53,10 @@ if [ "$1" = "configure" ]; then
                 API_KEY="<API_KEY>"
             else
                 echo "API Key : ${API_KEY}"
-                TMP=`mktemp -p /tmp/`
-                cp ${BOUNCER_CONFIG_PATH} ${TMP}
-                API_KEY=${API_KEY} CROWDSEC_LAPI_URL=${CROWDSEC_LAPI_URL} envsubst < ${TMP} > ${BOUNCER_CONFIG_PATH}
-                rm ${TMP}
+                TMP=$(mktemp -p /tmp/)
+                cp ${BOUNCER_CONFIG_PATH} "${TMP}"
+                API_KEY=${API_KEY} CROWDSEC_LAPI_URL=${CROWDSEC_LAPI_URL} envsubst < "${TMP}" > ${BOUNCER_CONFIG_PATH}
+                rm "${TMP}"
             fi
         fi
     fi
