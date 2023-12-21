@@ -2,7 +2,7 @@
 systemctl daemon-reload
 
 
-START=0
+API_KEY_REQUIRED=true
 BOUNCER_CONFIG_PATH="/etc/crowdsec/bouncers/crowdsec-openresty-bouncer.conf"
 API_KEY="<API_KEY>"
 CROWDSEC_LAPI_URL="<LAPI_URL>"
@@ -14,9 +14,9 @@ check_lua_dependency() {
     )
     for dep in ${DEPENDENCY[@]};
     do
-        opm list | grep ${dep} > /dev/null
+        opm list | grep "${dep}" > /dev/null
         if [[ $? != 0 ]]; then
-            opm get ${dep} > /dev/null && echo "${dep} successfully installed"     
+            opm get "${dep}" > /dev/null && echo "${dep} successfully installed"     
         fi
     done
 }
@@ -31,43 +31,44 @@ if [ "$1" = "configure" ]; then
         if [ "$2" != "" ] ; then
             echo "Upgrading, check if there is bouncer configuration"
             if [ -f "${BOUNCER_CONFIG_PATH}" ] ; then
-                START=2
+                API_KEY_REQUIRED=false
             fi
         fi
-        if [ ${START} -eq 0 ] ; then
-            START=1
+        API=$(cscli config show --key "Config.API.Server")
+        if [ "$API" = "nil" ] || [ "$API" = "<nil>" ] ; then
+            API_KEY_REQUIRED=false
+        fi
+        if [ ${API_KEY_REQUIRED} = true ] ; then
             echo "cscli/crowdsec is present, generating API key"
-            unique=`date +%s`
-            API_KEY=`cscli -oraw bouncers add crowdsec-openresty-bouncer-${unique}`
+            unique=$(date +%s)
+            API_KEY=$(cscli -oraw bouncers add crowdsec-openresty-bouncer-"${unique}")
             PORT=$(cscli config show --key "Config.API.Server.ListenURI"|cut -d ":" -f2)
             if [ ! -z "$PORT" ]; then
                 LAPI_DEFAULT_PORT=${PORT}
             fi
             CROWDSEC_LAPI_URL="http://127.0.0.1:${LAPI_DEFAULT_PORT}"
             if [ $? -eq 1 ] ; then
-                echo "failed to create API token, service won't be started."
-                START=0
+                echo "failed to create API key."
+                API_KEY_REQUIRED=true
                 API_KEY="<API_KEY>"
             else
                 echo "API Key : ${API_KEY}"
+                TMP=$(mktemp -p /tmp/)
+                cp ${BOUNCER_CONFIG_PATH} "${TMP}"
+                API_KEY=${API_KEY} CROWDSEC_LAPI_URL=${CROWDSEC_LAPI_URL} envsubst < "${TMP}" > ${BOUNCER_CONFIG_PATH}
+                rm "${TMP}"
             fi
         fi
     fi
 
-    TMP=`mktemp -p /tmp/`
-    cp ${BOUNCER_CONFIG_PATH} ${TMP}
-    API_KEY=${API_KEY} CROWDSEC_LAPI_URL=${CROWDSEC_LAPI_URL} envsubst < ${TMP} > ${BOUNCER_CONFIG_PATH}
-    rm ${TMP}
-    
     check_lua_dependency
-
     echo "Add 'include /usr/local/openresty/nginx/conf/conf.d/crowdsec_openresty.conf;' in your nginx configuration file to enable the bouncer."
 
 else
-    START=1
+    API_KEY_REQUIRED=false
 fi
 
-if [ ${START} -eq 0 ] ; then
+if [ ${API_KEY_REQUIRED} = true ] ; then
     echo "Can't generate an API key for the bouncer. Please do it manually"
 fi
 
