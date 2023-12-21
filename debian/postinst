@@ -35,7 +35,7 @@ if [ "$1" = "configure" ]; then
             fi
         fi
         API=$(cscli config show --key "Config.API.Server")
-        if [ "$API" = "nil" ] ; then
+        if [ "$API" = "nil" || "$API" = "<nil>"] ; then
             API_KEY_REQUIRED=false
         fi
         if [ ${API_KEY_REQUIRED} = true ] ; then
