@@ -122,7 +122,7 @@ if [ "$1" == "1" ] ; then
             break
         fi
     done
-    SSL_CERTS_PATH=${CERT_FILE} envsubst < ${TMP} > ${NGINX_CONFIG_PATH}
+    SSL_CERTS_PATH=${CERT_FILE} envsubst '$SSL_CERTS_PATH' < ${TMP} > ${NGINX_CONFIG_PATH}
     rm ${TMP}
 
     echo "Add 'include /usr/local/openresty/nginx/conf/conf.d/crowdsec_openresty.conf;' in your nginx configuration file (in the 'http' section) to enable the bouncer."
