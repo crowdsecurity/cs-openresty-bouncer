@@ -57,6 +57,29 @@ docker run -d -p 8080:80 \
     --name openresty crowdsecurity/crowdsec-openresty
 ```
 
+Or you can pass the whole bouncer config through the docker compose enviroment
+
+```code
+... in docker-compose.yml
+    ...
+    environment:
+        BOUNCER_CONFIG: |
+            API_KEY=${CROWDSEC_BOUNCER_OPENRESTY_APIKEY}
+            API_URL=http://crowdsec:8080
+            CAPTCHA_PROVIDER=${CROWDSEC_BOUNCER_OPENRESTY_CAPTCHA_PROVIDER}
+            SECRET_KEY=${CROWDSEC_BOUNCER_OPENRESTY_SECRET_KEY}
+            SITE_KEY=${CROWDSEC_BOUNCER_OPENRESTY_SITE_KEY}
+            FALLBACK_REMEDIATION=ban
+            MODE=stream
+            BOUNCING_ON_TYPE=all
+            CAPTCHA_TEMPLATE_PATH=/var/lib/crowdsec/lua/templates/captcha.html
+            BAN_TEMPLATE_PATH=/var/lib/crowdsec/lua/templates/ban.html
+            ALWAYS_SEND_TO_APPSEC=true
+            SSL_VERIFY=false
+            APPSEC_URL=http://crowdsec:7422
+    ...
+```
+
 ### Configuration
 
 The bouncer uses [lua_shared_dict](https://github.com/openresty/lua-nginx-module#lua_shared_dict) to share cache between all workers.

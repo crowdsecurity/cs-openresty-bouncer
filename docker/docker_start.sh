@@ -1,9 +1,10 @@
 #!/bin/bash
+
 #set -x
 CROWDSEC_BOUNCER_CONFIG="/etc/crowdsec/bouncers/crowdsec-openresty-bouncer.conf"
 
 if [ "$BOUNCER_CONFIG" != "" ]; then
-    CROWDSEC_BOUNCER_CONFIG="$BOUNCER_CONFIG"
+    echo "$BOUNCER_CONFIG" > $CROWDSEC_BOUNCER_CONFIG
 fi
 if [ "$API_URL" != "" ]; then
     sed -i "s,API_URL.*,API_URL=$API_URL," "$CROWDSEC_BOUNCER_CONFIG"
