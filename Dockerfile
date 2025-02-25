@@ -12,7 +12,6 @@ FROM with_deps as local
 RUN if [ "$BUILD_ENV" == "local" ]; then COPY ./lua-cs-bouncer/ lua-cs-bouncer; fi
 
 FROM ${BUILD_ENV}
-RUN apk add bash
 RUN mkdir -p /etc/crowdsec/bouncers/ /var/lib/crowdsec/lua/templates/
 RUN cp -R lua-cs-bouncer/lib/* /usr/local/openresty/lualib/
 RUN cp -R lua-cs-bouncer/templates/* /var/lib/crowdsec/lua/templates/

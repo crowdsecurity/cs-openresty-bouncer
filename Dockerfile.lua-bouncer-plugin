@@ -10,7 +10,6 @@ FROM docker.io/alpine:latest as local
 RUN if [ "$BUILD_ENV" == "local" ]; then COPY ./lua-cs-bouncer/ lua-cs-bouncer; fi
 
 FROM ${BUILD_ENV}
-RUN apk add bash
 RUN mkdir -p /crowdsec/templates
 RUN cp lua-cs-bouncer/lib/plugins/crowdsec/*.lua /crowdsec
 RUN cp lua-cs-bouncer/lib/crowdsec.lua /crowdsec
