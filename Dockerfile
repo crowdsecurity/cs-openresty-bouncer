@@ -1,5 +1,5 @@
 ARG BUILD_ENV=git
-FROM openresty/openresty:alpine-fat as with_deps
+FROM docker.io/openresty/openresty:alpine-fat as with_deps
 RUN luarocks install lua-resty-http
 
 FROM with_deps as git
@@ -23,4 +23,4 @@ RUN SSL_CERTS_PATH=/etc/ssl/certs/ca-certificates.crt envsubst '$SSL_CERTS_PATH'
 RUN sed -i '1 i\resolver local=on ipv6=off;' /etc/nginx/conf.d/crowdsec_openresty.conf
 COPY ./docker/docker_start.sh /
 
-ENTRYPOINT /bin/bash docker_start.sh
+ENTRYPOINT ["/bin/sh", "docker_start.sh"]
