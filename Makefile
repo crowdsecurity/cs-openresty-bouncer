@@ -7,7 +7,7 @@ OUT_ARCHIVE="crowdsec-openresty-bouncer.tgz"
 LUA_BOUNCER_BRANCH?=v1.0.1
 default: release
 release:
-	git clone -b "${LUA_BOUNCER_BRANCH}"" https://github.com/crowdsecurity/lua-cs-bouncer.git
+	git clone -b "${LUA_BOUNCER_BRANCH}" https://github.com/crowdsecurity/lua-cs-bouncer.git
 	mkdir -p "${OUTDIR}"
 	mkdir -p "${LUA_DIR}"
 	mkdir -p "${CONFIG_DIR}"
