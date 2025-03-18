@@ -74,7 +74,7 @@ CERTS=(
 
 check_lua_dependency() {
     DEPENDENCY=(
-        "pintsized/lua-resty-http"
+        "ledgetech/lua-resty-http=0.17.1"
     )
     for dep in ${DEPENDENCY[@]};
     do
