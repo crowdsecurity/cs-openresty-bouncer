@@ -4,7 +4,7 @@ RUN luarocks install lua-resty-http
 
 FROM with_deps as git
 ARG BUILD_ENV=git
-ARG LUA_LIB_VERSION=v1.0.7
+ARG LUA_LIB_VERSION=v1.0.9
 RUN if [ "$BUILD_ENV" == "git" ]; then apk add --no-cache git; fi
 RUN if [ "$BUILD_ENV" == "git" ]; then git clone -b "${LUA_LIB_VERSION}" https://github.com/crowdsecurity/lua-cs-bouncer.git ; fi
 
