@@ -18,12 +18,11 @@ function _M.init_worker()
         ngx.log(ngx.INFO, "Initializing stream mode for worker " .. tostring(ngx.worker.id()))
         cs.SetupStream()
     end
-    cs.debug_metrics()
 
-    ngx.log(ngx.INFO, "Crowdsec bouncer initialized in " .. mode .. " mode for worker " .. tostring(ngx.worker.id()))
     if ngx.worker.id() == 0 then
         cs.SetupMetrics()
     end
+    ngx.log(ngx.INFO, "Crowdsec bouncer initialized in " .. mode .. " mode for worker " .. tostring(ngx.worker.id()))
 end
 
 
