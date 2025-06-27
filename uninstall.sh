@@ -38,7 +38,7 @@ check_pkg_manager(){
 
 remove_lua_dependency() {
     DEPENDENCY=(
-        "pintsized/lua-resty-http"
+        "ledgetech/lua-resty-http"
     )
     for dep in ${DEPENDENCY[@]};
     do

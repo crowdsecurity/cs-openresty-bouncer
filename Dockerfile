@@ -1,6 +1,6 @@
 ARG BUILD_ENV=git
 FROM docker.io/openresty/openresty:alpine-fat as with_deps
-RUN luarocks install lua-resty-http
+RUN luarocks install lua-resty-http 0.17.1-0
 
 FROM with_deps as git
 ARG BUILD_ENV=git
