@@ -33,7 +33,7 @@ mkdir -p %{buildroot}/usr/local/openresty/nginx/conf/conf.d/
 mkdir -p %{buildroot}/usr/local/openresty/lualib/plugins/crowdsec/
 mkdir -p %{buildroot}/var/lib/crowdsec/lua/templates/
 mkdir -p %{buildroot}/etc/crowdsec/bouncers/
-git clone -b v1.0.10 https://github.com/crowdsecurity/lua-cs-bouncer.git
+git clone -b v1.0.11 https://github.com/crowdsecurity/lua-cs-bouncer.git
 install -m 600 -D lua-cs-bouncer/config_example.conf %{buildroot}/etc/crowdsec/bouncers/%{name}.conf
 install -m 644 -D lua-cs-bouncer/lib/crowdsec.lua %{buildroot}/usr/local/openresty/lualib/
 install -m 644 -D lua-cs-bouncer/lib/plugins/crowdsec/* %{buildroot}/usr/local/openresty/lualib/plugins/crowdsec/
