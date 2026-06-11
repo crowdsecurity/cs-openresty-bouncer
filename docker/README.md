@@ -105,7 +105,8 @@ For others parameters, you can use environment variables below or mount your own
 
 #### OpenResty
 
-* `SERVER_TOKENS`    - The OpenResty `server_tokens` setting. Controls whether OpenResty exposes its version in the `Server` header and error pages. Valid values are `on` and `off` (default: `on`) : `-e SERVER_TOKENS="off"`
+* `SERVER_TOKENS`       - The OpenResty `server_tokens` setting. Controls whether OpenResty exposes its version in the `Server` header and error pages. Valid values are `on` and `off` (default: `on`) : `-e SERVER_TOKENS="off"`
+* `WORKER_CONNECTIONS`  - The OpenResty `worker_connections` setting (default: `1024`) : `-e WORKER_CONNECTIONS="2048"`
 
 
 ### Volumes

@@ -39,6 +39,28 @@ for var in $params; do
 done
 
 : "${SERVER_TOKENS:=on}"
+: "${WORKER_CONNECTIONS:=1024}"
+
+case "$WORKER_CONNECTIONS" in
+  ''|*[!0-9]*|0)
+    echo "[docker_start] Invalid WORKER_CONNECTIONS=$WORKER_CONNECTIONS. Use a positive integer."
+    exit 1
+    ;;
+
+  *)
+    echo "[docker_start] Setting worker_connections to $WORKER_CONNECTIONS"
+
+    if grep -qE '^[[:space:]]*worker_connections[[:space:]]+' "$NGINX_CONF"; then
+      sed -i "s|^[[:space:]]*worker_connections[[:space:]]\+.*;|    worker_connections ${WORKER_CONNECTIONS};|" "$NGINX_CONF"
+
+    elif grep -qE '^[[:space:]]*#[[:space:]]*worker_connections[[:space:]]+' "$NGINX_CONF"; then
+      sed -i "s|^[[:space:]]*#[[:space:]]*worker_connections[[:space:]]\+.*;|    worker_connections ${WORKER_CONNECTIONS};|" "$NGINX_CONF"
+
+    else
+      sed -i "/^[[:space:]]*events[[:space:]]*{/a\\    worker_connections ${WORKER_CONNECTIONS};" "$NGINX_CONF"
+    fi
+    ;;
+esac
 
 case "$(echo "$SERVER_TOKENS" | tr '[:upper:]' '[:lower:]')" in
   off|false|0|no)
