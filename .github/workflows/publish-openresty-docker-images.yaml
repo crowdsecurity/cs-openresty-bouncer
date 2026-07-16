@@ -1,56 +1,60 @@
 name: Publish openresty Docker image
+
 on:
   release:
     types:
       - released
       - prereleased
+
+permissions: {}
+
 jobs:
   push_to_registry:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
+    environment: docker
+    env:
+      DOCKER_IMAGE: crowdsecurity/openresty
     steps:
-      - 
-        name: Check out the repo
-        uses: actions/checkout@v2
-      -
-        name: Prepare
+      - name: Check out the repo
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Prepare
         id: prep
+        env:
+          VERSION: ${{ github.event.release.tag_name }}
+          IS_LATEST: ${{ github.event.action == 'released' }}
         run: |
-          DOCKER_IMAGE=crowdsecurity/openresty
-          VERSION=edge
-          if [[ $GITHUB_REF == refs/tags/* ]]; then
-            VERSION=${GITHUB_REF#refs/tags/}
-          elif [[ $GITHUB_REF == refs/heads/* ]]; then
-            VERSION=$(echo ${GITHUB_REF#refs/heads/} | sed -E 's#/+#-#g')
-          elif [[ $GITHUB_REF == refs/pull/* ]]; then
-            VERSION=pr-${{ github.event.number }}
-          fi
+          set -euo pipefail
           TAGS="${DOCKER_IMAGE}:${VERSION}"
-          if [[ ${{ github.event.action }} == released ]]; then
-            TAGS=$TAGS,${DOCKER_IMAGE}:latest
+          if [[ "$IS_LATEST" == "true" ]]; then
+            TAGS="${TAGS},${DOCKER_IMAGE}:latest"
           fi
-          echo ::set-output name=version::${VERSION}
-          echo ::set-output name=tags::${TAGS}
-          echo ::set-output name=created::$(date -u +'%Y-%m-%dT%H:%M:%SZ')
-      - 
-        name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
-      - 
-        name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
-      -
-        name: Login to DockerHub
-        uses: docker/login-action@v1
+          {
+            echo "tags=${TAGS}"
+            echo "created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4.2.0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+
+      - name: Login to DockerHub
+        uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4.4.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      -
-        name: Build and push
-        uses: docker/build-push-action@v2
+
+      - name: Build and push
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
           context: .
           file: ./Dockerfile
-          push: ${{ github.event_name != 'pull_request' }}
+          push: true
           tags: ${{ steps.prep.outputs.tags }}
           platforms: linux/amd64,linux/arm64
           labels: |
