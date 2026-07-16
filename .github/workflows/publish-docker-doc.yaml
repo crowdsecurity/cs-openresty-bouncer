@@ -1,24 +1,36 @@
 name: Update Docker Hub README
 
-on: 
+on:
   push:
     branches:
       - main
     paths:
-      - 'docker/README.md'
+      - "docker/README.md"
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   update-docker-hub-readme:
+    name: Update Docker Hub README
     runs-on: ubuntu-latest
+    environment: docker
+    if: ${{ github.repository_owner == 'crowdsecurity' }}
+    permissions:
+      contents: read # checkout
     steps:
-      - 
-        name: Check out the repo
-        uses: actions/checkout@v2
-      -
-        name: Update docker hub README
-        uses: ms-jpq/sync-dockerhub-readme@v1
+      - name: Check out the repo
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Update docker hub README
+        uses: peter-evans/dockerhub-description@1b9a80c056b620d92cedb9d9b5a223409c68ddfa # v5.0.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           repository: crowdsecurity/openresty
-          readme: "./docker/README.md"
+          readme-filepath: "./docker/README.md"
