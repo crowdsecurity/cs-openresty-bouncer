@@ -13,6 +13,8 @@ jobs:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     environment: docker
+    permissions:
+      contents: read # checkout
     env:
       DOCKER_IMAGE: crowdsecurity/openresty
     steps:
