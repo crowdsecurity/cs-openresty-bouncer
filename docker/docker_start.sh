@@ -1,6 +1,8 @@
 #!/bin/sh
+set -e
 
 CROWDSEC_BOUNCER_CONFIG="${BOUNCER_CONFIG:-/etc/crowdsec/bouncers/crowdsec-openresty-bouncer.conf}"
+NGINX_CONF="/usr/local/openresty/nginx/conf/nginx.conf"
 
 params='
 ALWAYS_SEND_TO_APPSEC
@@ -35,6 +37,58 @@ for var in $params; do
         sed -i "s,${var}.*,${var}=${value}," "$CROWDSEC_BOUNCER_CONFIG"
     fi
 done
+
+: "${SERVER_TOKENS:=on}"
+: "${WORKER_CONNECTIONS:=1024}"
+
+case "$WORKER_CONNECTIONS" in
+  ''|*[!0-9]*|0)
+    echo "[docker_start] Invalid WORKER_CONNECTIONS=$WORKER_CONNECTIONS. Use a positive integer."
+    exit 1
+    ;;
+
+  *)
+    echo "[docker_start] Setting worker_connections to $WORKER_CONNECTIONS"
+
+    if grep -qE '^[[:space:]]*worker_connections[[:space:]]+' "$NGINX_CONF"; then
+      sed -i "s|^[[:space:]]*worker_connections[[:space:]]\+.*;|    worker_connections ${WORKER_CONNECTIONS};|" "$NGINX_CONF"
+
+    elif grep -qE '^[[:space:]]*#[[:space:]]*worker_connections[[:space:]]+' "$NGINX_CONF"; then
+      sed -i "s|^[[:space:]]*#[[:space:]]*worker_connections[[:space:]]\+.*;|    worker_connections ${WORKER_CONNECTIONS};|" "$NGINX_CONF"
+
+    else
+      sed -i "/^[[:space:]]*events[[:space:]]*{/a\\    worker_connections ${WORKER_CONNECTIONS};" "$NGINX_CONF"
+    fi
+    ;;
+esac
+
+case "$(echo "$SERVER_TOKENS" | tr '[:upper:]' '[:lower:]')" in
+  off|false|0|no)
+    echo "[docker_start] Disabling server_tokens"
+
+    if grep -qE '^[[:space:]]*server_tokens[[:space:]]+' "$NGINX_CONF"; then
+      sed -i 's|^[[:space:]]*server_tokens[[:space:]]\+.*;|    server_tokens off;|' "$NGINX_CONF"
+
+    elif grep -qE '^[[:space:]]*#[[:space:]]*server_tokens[[:space:]]+' "$NGINX_CONF"; then
+      sed -i 's|^[[:space:]]*#[[:space:]]*server_tokens[[:space:]]\+.*;|    server_tokens off;|' "$NGINX_CONF"
+
+    else
+      sed -i '/^[[:space:]]*http[[:space:]]*{/a\    server_tokens off;' "$NGINX_CONF"
+    fi
+    ;;
+
+  on|true|1|yes)
+    echo "[docker_start] Leaving server_tokens enabled"
+
+    # Comment out any active server_tokens directive so the OpenResty default applies
+    sed -i 's|^[[:space:]]*server_tokens[[:space:]]\+\(.*;\)|    # server_tokens \1|' "$NGINX_CONF"
+    ;;
+
+  *)
+    echo "[docker_start] Invalid SERVER_TOKENS=$SERVER_TOKENS. Use on/off."
+    exit 1
+    ;;
+esac
 
 lower=$(echo "$IS_LUALIB_IMAGE" | tr '[:upper:]' '[:lower:]')
 if [ "$lower" != "true" ]; then
