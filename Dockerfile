@@ -4,7 +4,7 @@ FROM docker.io/openresty/openresty:alpine-fat AS with_deps
 RUN luarocks install lua-resty-http 0.17.1-0
 
 FROM with_deps AS git
-ARG LUA_LIB_VERSION=v1.0.16
+ARG LUA_LIB_VERSION=v1.0.17
 RUN apk add --no-cache git
 RUN git clone -b "${LUA_LIB_VERSION}" https://github.com/crowdsecurity/lua-cs-bouncer.git /lua-cs-bouncer
 
