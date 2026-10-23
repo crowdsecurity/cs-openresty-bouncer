@@ -5,11 +5,8 @@ NGINX_CONF_DIR="/usr/local/openresty/nginx/conf/conf.d/"
 LIB_PATH="/usr/local/openresty/lualib/"
 CONFIG_PATH="/etc/crowdsec/bouncers/"
 DATA_PATH="/var/lib/crowdsec/lua/"
-PKG="apt"
-PACKAGE_LIST="dpkg -l"
 SSL_CERTS_PATH="/etc/ssl/certs/ca-certificates.crt"
 LAPI_DEFAULT_PORT="8080"
-SILENT="false"
 
 #Accept cmdline arguments to overwrite options.
 while [[ $# -gt 0 ]]
@@ -31,7 +28,7 @@ do
             SSL_CERTS_PATH="${1#*=}"
         ;;
         -y|--yes)
-            SILENT="true"
+            # no-op, kept for backward compatibility
         ;;
         --docker)
             DOCKER="1"
@@ -42,19 +39,12 @@ done
 
 check_pkg_manager(){
     if [ -f /etc/redhat-release ]; then
-        PKG="yum"
-        PACKAGE_LIST="yum list installed"
         SSL_CERTS_PATH="/etc/ssl/certs/ca-bundle.crt"
     elif [ -f /etc/system-release ]; then
         if grep -q "Amazon Linux release 2 (Karoo)" < /etc/system-release ; then
-            PKG="yum"
-            PACKAGE_LIST="yum list installed"
             SSL_CERTS_PATH="/etc/ssl/certs/ca-bundle.crt"
         fi
-    elif [ -f /etc/debian_version ]; then
-        PKG="apt"
-        PACKAGE_LIST="dpkg -l"
-    else
+    elif ! [ -f /etc/debian_version ]; then
         echo "Distribution is not supported, exiting."
         exit
     fi   
@@ -98,58 +88,6 @@ gen_config_file() {
     sed -i 's|/var/lib/crowdsec/lua|'"${DATA_PATH}"'|' "${CONFIG_PATH}/crowdsec-openresty-bouncer.conf"
 }
 
-check_openresty_dependency() {
-    DEPENDENCY=( \
-        "openresty-opm" \
-        )
-    for dep in "${DEPENDENCY[@]}";
-    do
-        if ! $PACKAGE_LIST | grep "${dep}" > /dev/null; then
-            if [[ ${SILENT} == "true" ]]; then
-                "$PKG" install -y -qq "${dep}" > /dev/null && echo "${dep} successfully installed"
-            else
-                echo "${dep} not found, do you want to install it (Y/n)? "
-                read -r answer
-                if [[ ${answer} == "" ]]; then
-                    answer="y"
-                fi
-                if [ "$answer" != "${answer#[Yy]}" ] ;then
-                    "$PKG" install -y -qq "${dep}" > /dev/null && echo "${dep} successfully installed"
-                else
-                    echo "unable to continue without ${dep}. Exiting" && exit 1
-                fi
-            fi
-        fi
-    done
-}
-
-check_lua_dependency() {
-    DEPENDENCY=( \
-        "ledgetech/lua-resty-http=0.17.1" \
-    )
-    for dep in "${DEPENDENCY[@]}";
-    do
-        
-        if ! opm list | grep "${dep}" > /dev/null; then
-            if [[ ${SILENT} == "true" ]]; then
-                opm get "${dep}" > /dev/null && echo "${dep} successfully installed"
-            else
-                echo "${dep} not found, do you want to install it (Y/n)? "
-                read -r answer
-                if [[ ${answer} == "" ]]; then
-                    answer="y"
-                fi
-                if [ "$answer" != "${answer#[Yy]}" ] ;then
-                    opm get "${dep}" > /dev/null && echo "${dep} successfully installed"
-                else
-                    echo "unable to continue without ${dep}. Exiting" && exit 1
-                fi
-            fi
-        fi
-    done
-}
-
-
 install() {
     mkdir -p "${DATA_PATH}/templates/"
     cp -r lua/lib/* "${LIB_PATH}/"
@@ -167,8 +105,6 @@ fi
 
 [ -z ${DOCKER} ] && check_pkg_manager
 requirement
-[ -z ${DOCKER} ] && check_openresty_dependency
-[ -z ${DOCKER} ] && check_lua_dependency
 gen_config_file
 install
 echo "crowdsec-openresty-bouncer installed successfully"

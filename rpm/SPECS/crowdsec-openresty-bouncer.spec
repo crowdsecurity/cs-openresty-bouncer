@@ -12,7 +12,7 @@ BuildRequires:  git
 BuildRequires:  make
 %{?fc33:BuildRequires: systemd-rpm-macros}
 
-Requires: openresty, openresty-opm, gettext
+Requires: openresty, gettext
 
 %define debug_package %{nil}
 
@@ -37,6 +37,8 @@ git clone -b v1.0.19 https://github.com/crowdsecurity/lua-cs-bouncer.git
 install -m 600 -D lua-cs-bouncer/config_example.conf %{buildroot}/etc/crowdsec/bouncers/%{name}.conf
 install -m 644 -D lua-cs-bouncer/lib/crowdsec.lua %{buildroot}/usr/local/openresty/lualib/
 install -m 644 -D lua-cs-bouncer/lib/plugins/crowdsec/* %{buildroot}/usr/local/openresty/lualib/plugins/crowdsec/
+mkdir -p %{buildroot}/usr/local/openresty/lualib/resty/
+install -m 644 -D vendor/*/lib/resty/* %{buildroot}/usr/local/openresty/lualib/resty/
 install -m 644 -D lua-cs-bouncer/templates/* %{buildroot}/var/lib/crowdsec/lua/templates/
 install -m 644 -D openresty/crowdsec_openresty.conf %{buildroot}/usr/local/openresty/nginx/conf/conf.d/
 
@@ -72,20 +74,6 @@ CERTS=(
 
 
 
-check_lua_dependency() {
-    DEPENDENCY=(
-        "ledgetech/lua-resty-http=0.17.1"
-    )
-    for dep in ${DEPENDENCY[@]};
-    do
-        opm list | grep ${dep} > /dev/null
-        if [[ $? != 0 ]]; then
-            opm get ${dep} > /dev/null && echo "${dep} successfully installed"     
-        fi
-    done
-}
-
-
 if [ "$1" == "1" ] ; then
     type cscli > /dev/null
     if [ "$?" -eq "0" ] ; then
@@ -109,8 +97,6 @@ if [ "$1" == "1" ] ; then
         cp ${BOUNCER_CONFIG_PATH} ${TMP}
         API_KEY=${API_KEY} CROWDSEC_LAPI_URL=${CROWDSEC_LAPI_URL} envsubst < ${TMP} > ${BOUNCER_CONFIG_PATH}
         rm ${TMP}
-        check_lua_dependency
-
     fi
 
     TMP=`mktemp -p /tmp/`
