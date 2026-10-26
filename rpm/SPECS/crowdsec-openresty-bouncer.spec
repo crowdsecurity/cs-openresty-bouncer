@@ -41,7 +41,6 @@ mkdir -p %{buildroot}/usr/local/openresty/lualib/resty/
 install -m 644 -D vendor/*/lib/resty/* %{buildroot}/usr/local/openresty/lualib/resty/
 install -m 644 -D lua-cs-bouncer/templates/* %{buildroot}/var/lib/crowdsec/lua/templates/
 install -m 644 -D openresty/crowdsec_openresty.conf %{buildroot}/usr/local/openresty/nginx/conf/conf.d/
-sed -i 's|${SSL_CERTS_PATH}|/etc/pki/tls/certs/ca-bundle.crt|' %{buildroot}/usr/local/openresty/nginx/conf/conf.d/crowdsec_openresty.conf
 
 %clean
 rm -rf %{buildroot}
@@ -58,10 +57,34 @@ rm -rf %{buildroot}
 
 systemctl daemon-reload
 
+NGINX_CONFIG_PATH="/usr/local/openresty/nginx/conf/conf.d/crowdsec_openresty.conf"
 BOUNCER_CONFIG_PATH="/etc/crowdsec/bouncers/crowdsec-openresty-bouncer.conf"
 START=0
 LAPI_DEFAULT_PORT="8080"
 
+# The same RPM is installed on every RPM-based distro, so the CA bundle is
+# looked up on the host. This runs on upgrades too: the nginx config is not
+# a %config file and is replaced by the template on every upgrade.
+CERTS=(
+    "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem"
+    "/var/lib/ca-certificates/ca-bundle.pem"
+    "/etc/ssl/ca-bundle.pem"
+    "/etc/pki/tls/certs/ca-bundle.crt"
+    "/etc/ssl/certs/ca-bundle.crt"
+)
+CERT_FILE=""
+for cert_path in "${CERTS[@]}"; do
+    if [ -f "$cert_path" ]; then
+        CERT_FILE=$cert_path
+        break
+    fi
+done
+if [ -n "$CERT_FILE" ]; then
+    sed -i "s|\${SSL_CERTS_PATH}|${CERT_FILE}|" ${NGINX_CONFIG_PATH}
+else
+    sed -i 's|^lua_ssl_trusted_certificate \${SSL_CERTS_PATH};|# lua_ssl_trusted_certificate <CA bundle path>;|' ${NGINX_CONFIG_PATH}
+    echo "Unable to find a CA bundle: 'lua_ssl_trusted_certificate' is commented out in ${NGINX_CONFIG_PATH}, set it to enable TLS certificate verification."
+fi
 
 if [ "$1" == "1" ] ; then
     type cscli > /dev/null
