@@ -16,6 +16,7 @@ override_dh_auto_build:
 override_dh_auto_install:
 	mkdir -p debian/crowdsec-openresty-bouncer/usr/local/openresty/nginx/conf/conf.d/
 	cp openresty/crowdsec_openresty.conf debian/crowdsec-openresty-bouncer/usr/local/openresty/nginx/conf/conf.d/
+	sed -i 's|$${SSL_CERTS_PATH}|/etc/ssl/certs/ca-certificates.crt|' debian/crowdsec-openresty-bouncer/usr/local/openresty/nginx/conf/conf.d/crowdsec_openresty.conf
 
 	git clone -b "${LUA_BOUNCER_BRANCH}" https://github.com/crowdsecurity/lua-cs-bouncer.git
 

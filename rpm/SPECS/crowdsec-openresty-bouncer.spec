@@ -12,7 +12,7 @@ BuildRequires:  git
 BuildRequires:  make
 %{?fc33:BuildRequires: systemd-rpm-macros}
 
-Requires: openresty, gettext
+Requires: openresty, gettext, ca-certificates
 
 %define debug_package %{nil}
 
@@ -41,6 +41,7 @@ mkdir -p %{buildroot}/usr/local/openresty/lualib/resty/
 install -m 644 -D vendor/*/lib/resty/* %{buildroot}/usr/local/openresty/lualib/resty/
 install -m 644 -D lua-cs-bouncer/templates/* %{buildroot}/var/lib/crowdsec/lua/templates/
 install -m 644 -D openresty/crowdsec_openresty.conf %{buildroot}/usr/local/openresty/nginx/conf/conf.d/
+sed -i 's|${SSL_CERTS_PATH}|/etc/pki/tls/certs/ca-bundle.crt|' %{buildroot}/usr/local/openresty/nginx/conf/conf.d/crowdsec_openresty.conf
 
 %clean
 rm -rf %{buildroot}
@@ -57,21 +58,9 @@ rm -rf %{buildroot}
 
 systemctl daemon-reload
 
-NGINX_CONFIG_PATH="/usr/local/openresty/nginx/conf/conf.d/crowdsec_openresty.conf"
 BOUNCER_CONFIG_PATH="/etc/crowdsec/bouncers/crowdsec-openresty-bouncer.conf"
-CERT_FILE=""
-CERT_OK=0
 START=0
 LAPI_DEFAULT_PORT="8080"
-
-CERTS=(
-    "/etc/pki/tls/certs/ca-bundle.crt"
-    "/etc/pki/tls/cacert.pem"
-    "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem"
-    "/etc/ssl/certs/ca-bundle.crt"
-    "/etc/ssl/certs/ca-certificates.crt"
-)
-
 
 
 if [ "$1" == "1" ] ; then
@@ -99,28 +88,11 @@ if [ "$1" == "1" ] ; then
         rm ${TMP}
     fi
 
-    TMP=`mktemp -p /tmp/`
-    cp ${NGINX_CONFIG_PATH} ${TMP}
-    for cert_path in ${CERTS[@]};
-    do
-        if [ -f $cert_path ]; then
-            CERT_FILE=$cert_path
-            break
-        fi
-    done
-    SSL_CERTS_PATH=${CERT_FILE} envsubst '$SSL_CERTS_PATH' < ${TMP} > ${NGINX_CONFIG_PATH}
-    rm ${TMP}
-
     echo "Add 'include /usr/local/openresty/nginx/conf/conf.d/crowdsec_openresty.conf;' in your nginx configuration file (in the 'http' section) to enable the bouncer."
 
 else 
     START=1
 fi
-
-if [ "$CERT_FILE" = "" ]; then
-    echo "Unable to find a valid certificate, please provide a valide certificate for the 'lua_ssl_trusted_certificate' directive in ${NGINX_CONFIG_PATH}."
-fi
-
 
 echo "CrowdSec OpenResty Bouncer installed. Restart OpenResty service with 'sudo systemctl restart openresty'"
 
