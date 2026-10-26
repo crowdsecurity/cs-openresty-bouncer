@@ -22,7 +22,7 @@ override_dh_auto_install:
 	mkdir -p debian/crowdsec-openresty-bouncer/usr/local/openresty/lualib/
 	mkdir -p debian/crowdsec-openresty-bouncer/var/lib/crowdsec/lua/templates/
 	cp -r lua-cs-bouncer/lib/* debian/crowdsec-openresty-bouncer/usr/local/openresty/lualib/
-	for dep in vendor/*/; do cp -r "$${dep}lib/"* debian/crowdsec-openresty-bouncer/usr/local/openresty/lualib/; done
+	for dep in vendor/*/; do cp -r "$${dep}lib/"* debian/crowdsec-openresty-bouncer/usr/local/openresty/lualib/plugins/crowdsec/; done
 	cp -r lua-cs-bouncer/templates/* debian/crowdsec-openresty-bouncer/var/lib/crowdsec/lua/templates/
 	mkdir -p debian/crowdsec-openresty-bouncer/etc/crowdsec/bouncers/
 	cp lua-cs-bouncer/config_example.conf debian/crowdsec-openresty-bouncer/etc/crowdsec/bouncers/crowdsec-openresty-bouncer.conf
