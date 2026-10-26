@@ -14,7 +14,7 @@ release:
 	mkdir -p "${CONFIG_DIR}"
 	mkdir -p "${TEMPLATE_DIR}"
 	cp -r lua-cs-bouncer/lib "${LUA_DIR}"
-	for dep in vendor/*/; do cp -r "$${dep}lib/"* "${LUA_DIR}/lib/"; done
+	for dep in vendor/*/; do cp -r "$${dep}lib/"* "${LUA_DIR}/lib/plugins/crowdsec/"; done
 	cp lua-cs-bouncer/templates/* "${TEMPLATE_DIR}"
 	cp -r lua-cs-bouncer/config_example.conf ${CONFIG_DIR}
 	cp -r ./openresty/ ${OUTDIR}

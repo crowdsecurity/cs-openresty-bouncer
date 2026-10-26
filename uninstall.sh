@@ -3,12 +3,6 @@
 NGINX_CONF="crowdsec_openresty.conf"
 NGINX_CONF_DIR="/usr/local/openresty/nginx/conf/conf.d/"
 LIB_PATH="/usr/local/openresty/lualib/plugins/crowdsec/"
-VENDOR_LIB_PATH="/usr/local/openresty/lualib/resty/"
-VENDOR_LIBS=(
-    "http.lua"
-    "http_connect.lua"
-    "http_headers.lua"
-)
 
 #Accept cmdline arguments to overwrite options.
 while [[ $# -gt 0 ]]
@@ -30,9 +24,6 @@ check_pkg_manager(){
 
 uninstall() {
     rm -rf ${LIB_PATH}
-    for lib in "${VENDOR_LIBS[@]}"; do
-        rm -f "${VENDOR_LIB_PATH}${lib}"
-    done
 	rm ${NGINX_CONF_DIR}/${NGINX_CONF}
 }
 
