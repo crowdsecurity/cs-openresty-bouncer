@@ -1,7 +1,7 @@
 ARG BUILD_ENV=git
 
 FROM docker.io/openresty/openresty:alpine-fat AS with_deps
-RUN luarocks install lua-resty-http 0.17.1-0
+COPY vendor/lua-resty-http/lib/ /usr/local/openresty/lualib/plugins/crowdsec/
 
 FROM with_deps AS git
 ARG LUA_LIB_VERSION=v1.0.19

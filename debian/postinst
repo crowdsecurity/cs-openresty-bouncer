@@ -8,20 +8,6 @@ API_KEY="<API_KEY>"
 CROWDSEC_LAPI_URL="<LAPI_URL>"
 LAPI_DEFAULT_PORT="8080"
 
-check_lua_dependency() {
-    DEPENDENCY=(
-        "ledgetech/lua-resty-http=0.17.1"
-    )
-    for dep in ${DEPENDENCY[@]};
-    do
-        opm list | grep "${dep}" > /dev/null
-        if [[ $? != 0 ]]; then
-            opm get "${dep}" > /dev/null && echo "${dep} successfully installed"     
-        fi
-    done
-}
-
-
 if [ "$1" = "configure" ]; then
 
     type cscli
@@ -62,7 +48,6 @@ if [ "$1" = "configure" ]; then
         fi
     fi
 
-    check_lua_dependency
     echo "Add 'include /usr/local/openresty/nginx/conf/conf.d/crowdsec_openresty.conf;' in your nginx configuration file to enable the bouncer."
 
 else

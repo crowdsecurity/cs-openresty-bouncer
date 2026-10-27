@@ -5,6 +5,7 @@ CONFIG_DIR="${OUTDIR}config"
 TEMPLATE_DIR="${OUTDIR}templates"
 OUT_ARCHIVE="crowdsec-openresty-bouncer.tgz"
 LUA_BOUNCER_BRANCH?=v1.0.19
+.PHONY: default release clean vendor-sync vendor-verify vendor-outdated
 default: release
 release:
 	git clone -b "${LUA_BOUNCER_BRANCH}" https://github.com/crowdsecurity/lua-cs-bouncer.git
@@ -13,6 +14,7 @@ release:
 	mkdir -p "${CONFIG_DIR}"
 	mkdir -p "${TEMPLATE_DIR}"
 	cp -r lua-cs-bouncer/lib "${LUA_DIR}"
+	for dep in vendor/*/; do cp -r "$${dep}lib/"* "${LUA_DIR}/lib/plugins/crowdsec/"; done
 	cp lua-cs-bouncer/templates/* "${TEMPLATE_DIR}"
 	cp -r lua-cs-bouncer/config_example.conf ${CONFIG_DIR}
 	cp -r ./openresty/ ${OUTDIR}
@@ -23,6 +25,15 @@ release:
 	tar cvzf ${OUT_ARCHIVE} ${OUTDIR}
 	rm -rf ${OUTDIR}
 	rm -rf "lua-cs-bouncer/"
+vendor-sync:
+	./scripts/vendor.sh sync
+
+vendor-verify:
+	./scripts/vendor.sh verify
+
+vendor-outdated:
+	./scripts/vendor.sh outdated
+
 clean:
 	rm -rf "${OUTDIR}"
 	rm -rf "${OUT_ARCHIVE}"

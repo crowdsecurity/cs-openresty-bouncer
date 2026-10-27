@@ -6,4 +6,4 @@ Package: crowdsec-openresty-bouncer
 Provides: crowdsec-openresty-bouncer
 Description: lua-based openresty bouncer for Crowdsec
 Architecture: all
-Depends: bash, openresty, openresty-opm, gettext-base
+Depends: bash, openresty, gettext-base, ca-certificates
