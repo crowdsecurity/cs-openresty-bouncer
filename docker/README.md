@@ -77,14 +77,14 @@ For others parameters, you can use environment variables below or mount your own
 * `CAPTCHA_PROVIDER` - The selected captcha provider for your `SITE_KEY` and `SECRET_KEY`. Valid providers are recaptcha, hcaptcha or turnstile. For backwards compatability the default is recaptcha if not provided.
 * `SITE_KEY`         - The site key for the selected captcha provider.
 * `SECRET_KEY`       - The secret key for the selected captcha provider.
-* `BAN_TEMPLATE_PATH`     - Path to the HTML page returned for ban decisions. A custom path must be mounted in the container (default: `/var/lib/crowdsec/lua/templates/ban.html`) : `-e BAN_TEMPLATE_PATH="/var/lib/crowdsec/lua/templates/ban.html"`
-* `CAPTCHA_TEMPLATE_PATH` - Path to the HTML page returned for captcha decisions. A custom path must be mounted in the container (default: `/var/lib/crowdsec/lua/templates/captcha.html`) : `-e CAPTCHA_TEMPLATE_PATH="/var/lib/crowdsec/lua/templates/captcha.html"`
+* `BAN_TEMPLATE_PATH`     - Path to the HTML page returned for ban decisions. A custom path must be mounted in the container (default: `/var/lib/crowdsec/lua/templates/ban.html`)
+* `CAPTCHA_TEMPLATE_PATH` - Path to the HTML page returned for captcha decisions. A custom path must be mounted in the container (default: `/var/lib/crowdsec/lua/templates/captcha.html`)
 * `APPSEC_URL`             - CrowdSec AppSec component URL. AppSec is disabled when empty : `-e APPSEC_URL="http://172.17.0.1:7422"`
-* `APPSEC_CONNECT_TIMEOUT` - Connection timeout to the AppSec component, in milliseconds (integer) (default: `100`) : `-e APPSEC_CONNECT_TIMEOUT="100"`
-* `APPSEC_SEND_TIMEOUT`    - Timeout to send the request to the AppSec component, in milliseconds (integer) (default: `100`) : `-e APPSEC_SEND_TIMEOUT="100"`
-* `APPSEC_PROCESS_TIMEOUT` - Timeout to wait for the AppSec component's answer, in milliseconds (integer) (default: `500`) : `-e APPSEC_PROCESS_TIMEOUT="500"`
-* `APPSEC_FAILURE_ACTION`  - What to do when the AppSec component can't be reached or fails: `passthrough` lets the request through, `deny` applies `FALLBACK_REMEDIATION` (default: `passthrough`) : `-e APPSEC_FAILURE_ACTION="passthrough"`
-* `ALWAYS_SEND_TO_APPSEC`  - Send requests to the AppSec component even when the IP already has a decision (default: `false`) : `-e ALWAYS_SEND_TO_APPSEC="false"`
+* `APPSEC_CONNECT_TIMEOUT` - Connection timeout to the AppSec component, in milliseconds (integer) (default: `100`)
+* `APPSEC_SEND_TIMEOUT`    - Timeout to send the request to the AppSec component, in milliseconds (integer) (default: `100`)
+* `APPSEC_PROCESS_TIMEOUT` - Timeout to wait for the AppSec component's answer, in milliseconds (integer) (default: `500`)
+* `APPSEC_FAILURE_ACTION`  - What to do when the AppSec component can't be reached or fails: `passthrough` lets the request through, `deny` applies `FALLBACK_REMEDIATION` (default: `passthrough`)
+* `ALWAYS_SEND_TO_APPSEC`  - Send requests to the AppSec component even when the IP already has a decision (default: `false`)
 
 AppSec timeouts are integers in milliseconds: a value below `1` (e.g. `0.2`) is truncated to `0`, which falls back to OpenResty's 60 second socket timeout.
 
