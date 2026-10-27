@@ -12,7 +12,7 @@ BuildRequires:  git
 BuildRequires:  make
 %{?fc33:BuildRequires: systemd-rpm-macros}
 
-Requires: openresty, gettext
+Requires: openresty, gettext, ca-certificates
 
 %define debug_package %{nil}
 
@@ -59,20 +59,32 @@ systemctl daemon-reload
 
 NGINX_CONFIG_PATH="/usr/local/openresty/nginx/conf/conf.d/crowdsec_openresty.conf"
 BOUNCER_CONFIG_PATH="/etc/crowdsec/bouncers/crowdsec-openresty-bouncer.conf"
-CERT_FILE=""
-CERT_OK=0
 START=0
 LAPI_DEFAULT_PORT="8080"
 
+# The same RPM is installed on every RPM-based distro, so the CA bundle is
+# looked up on the host. This runs on upgrades too: the nginx config is not
+# a %config file and is replaced by the template on every upgrade.
 CERTS=(
-    "/etc/pki/tls/certs/ca-bundle.crt"
-    "/etc/pki/tls/cacert.pem"
     "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem"
+    "/var/lib/ca-certificates/ca-bundle.pem"
+    "/etc/ssl/ca-bundle.pem"
+    "/etc/pki/tls/certs/ca-bundle.crt"
     "/etc/ssl/certs/ca-bundle.crt"
-    "/etc/ssl/certs/ca-certificates.crt"
 )
-
-
+CERT_FILE=""
+for cert_path in "${CERTS[@]}"; do
+    if [ -f "$cert_path" ]; then
+        CERT_FILE=$cert_path
+        break
+    fi
+done
+if [ -n "$CERT_FILE" ]; then
+    sed -i "s|\${SSL_CERTS_PATH}|${CERT_FILE}|" ${NGINX_CONFIG_PATH}
+else
+    sed -i 's|^lua_ssl_trusted_certificate \${SSL_CERTS_PATH};|# lua_ssl_trusted_certificate <CA bundle path>;|' ${NGINX_CONFIG_PATH}
+    echo "Unable to find a CA bundle: 'lua_ssl_trusted_certificate' is commented out in ${NGINX_CONFIG_PATH}, set it to enable TLS certificate verification."
+fi
 
 if [ "$1" == "1" ] ; then
     type cscli > /dev/null
@@ -99,28 +111,11 @@ if [ "$1" == "1" ] ; then
         rm ${TMP}
     fi
 
-    TMP=`mktemp -p /tmp/`
-    cp ${NGINX_CONFIG_PATH} ${TMP}
-    for cert_path in ${CERTS[@]};
-    do
-        if [ -f $cert_path ]; then
-            CERT_FILE=$cert_path
-            break
-        fi
-    done
-    SSL_CERTS_PATH=${CERT_FILE} envsubst '$SSL_CERTS_PATH' < ${TMP} > ${NGINX_CONFIG_PATH}
-    rm ${TMP}
-
     echo "Add 'include /usr/local/openresty/nginx/conf/conf.d/crowdsec_openresty.conf;' in your nginx configuration file (in the 'http' section) to enable the bouncer."
 
 else 
     START=1
 fi
-
-if [ "$CERT_FILE" = "" ]; then
-    echo "Unable to find a valid certificate, please provide a valide certificate for the 'lua_ssl_trusted_certificate' directive in ${NGINX_CONFIG_PATH}."
-fi
-
 
 echo "CrowdSec OpenResty Bouncer installed. Restart OpenResty service with 'sudo systemctl restart openresty'"
 
